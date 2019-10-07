@@ -8,7 +8,9 @@ public class AppInfo {
   Rectangle rectMain;
   Rectangle rectPref;
   Rectangle rectImpt;
-  HashMap<String, Integer> columnWidthMap;
+  HashMap<String, Integer> columnWidthMain;
+  HashMap<String, Integer> columnWidthImpt;
+  String imptDir;
 
   /**
    * アプリケーション設定情報をBeanとして扱うためのクラス
@@ -51,12 +53,28 @@ public class AppInfo {
     this.rectImpt = rectImpt;
   }
 
-  public HashMap<String, Integer> getColumnWidthMap() {
-    return columnWidthMap;
+  public HashMap<String, Integer> getColumnWidthMain() {
+    return columnWidthMain;
   }
 
-  public void setColumnWidthMap(HashMap<String, Integer> columnWidthMap) {
-    this.columnWidthMap = columnWidthMap;
+  public void setColumnWidthMain(HashMap<String, Integer> columnWidthMap) {
+    this.columnWidthMain = columnWidthMap;
+  }
+
+  public HashMap<String, Integer> getColumnWidthImpt() {
+    return columnWidthImpt;
+  }
+
+  public void setColumnWidthImpt(HashMap<String, Integer> columnWidthIMap) {
+    this.columnWidthImpt = columnWidthIMap;
+  }
+
+  public String getImptDir() {
+    return imptDir;
+  }
+
+  public void setImptDir(String imptDir) {
+    this.imptDir = imptDir;
   }
 
 

@@ -97,7 +97,7 @@ public class DcManJ {
           this.getClass().getResourceAsStream("/data/VL-PGothic-Regular.ttf"));
       // this.getClass().getResourceAsStream("/data/mplus-2m-bold.ttf"));
       // this.getClass().getResourceAsStream("/data/mplus-2m-medium.ttf"));
-      tableFont = tableFont.deriveFont(Font.BOLD, 10.0f);
+      tableFont = tableFont.deriveFont(Font.BOLD, 11.0f);
     } catch (FontFormatException e2) {
       System.out.println("jar同梱フォントファイルが不正です");
       e2.printStackTrace();
