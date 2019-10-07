@@ -4,12 +4,16 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.Vector;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -19,7 +23,7 @@ import javax.swing.table.TableModel;
 /**
  * 拡張版JTable カラムヘッダクリックでソート可能 カラムヘッダ境界ダブルクリックで列幅調整可能 マウスオーバーでセル内容をToolTipText表示 これら以外にOverrideしたい場合は
  * ExtendedTable exTable = new ExtendedTable(dataModel) {
- *
+ * 
  * @Override public boolean isCellEditable(int row, int column) { return false; } }; とかやる
  */
 public class ExtendedTable extends JTable {
@@ -107,6 +111,38 @@ public class ExtendedTable extends JTable {
     // ヘッダの字揃えも変更しようとして↓をやると、データのクラスが同じ他の列でも変更されてしまう
     // getColumnModel().getColumn(columnIdx).setHeaderRenderer(new
     // HorizontalAlignmentHeaderRenderer(alignment));
+  }
+
+  public void setColumnWidth(HashMap<String, Integer> columnWidthMap) {
+    DefaultTableColumnModel defaultTableColumnModel = (DefaultTableColumnModel) getColumnModel();
+    TableColumn column = null;
+    int columnIdx;
+
+    for (String key : columnWidthMap.keySet()) {
+      try {
+        columnIdx = defaultTableColumnModel.getColumnIndex(key);
+        column = defaultTableColumnModel.getColumn(columnIdx);
+        if (Objects.nonNull(columnWidthMap.get(key))) {
+          column.setPreferredWidth(columnWidthMap.get(key));
+        }
+      } catch (Exception e) {
+        System.out.println(key + " seems removed");
+      }
+    }
+  }
+
+  public HashMap<String, Integer> getColumnWidth() {
+    HashMap<String, Integer> columnWidthMap = new HashMap<String, Integer>();
+    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
+    TableColumn tableColumn;
+    String identifier;
+    Enumeration<TableColumn> e = columnModel.getColumns();
+    while (e.hasMoreElements()) {
+      tableColumn = e.nextElement();
+      identifier = (String) tableColumn.getIdentifier();
+      columnWidthMap.put(identifier, tableColumn.getWidth());
+    }
+    return columnWidthMap;
   }
 
   /**

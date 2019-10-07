@@ -24,7 +24,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.main.DcManJ;
@@ -184,6 +183,7 @@ public class BrowserTable extends ExtendedTable {
             Path entryPath = browserTable.getEntries().get(0).getPath();
 
             // TODO この部分 環境判定で分岐
+            // explorer.exeに渡すオプションについては https://smdn.jp/programming/tips/explorer_options/ を参照
             String filerCommandString = "%windir%\\explorer ";
             filerCommandString += "/select,";
             filerCommandString += entryPath.toString();
@@ -410,24 +410,6 @@ public class BrowserTable extends ExtendedTable {
     TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
     this.setRowSorter(sorter);
 
-  }
-
-  public void setColumnWidth(HashMap<String, Integer> columnWidthMap) {
-    DefaultTableColumnModel defaultTableColumnModel = (DefaultTableColumnModel) getColumnModel();
-    TableColumn column = null;
-    int columnIdx;
-
-    for (String key : columnWidthMap.keySet()) {
-      try {
-        columnIdx = defaultTableColumnModel.getColumnIndex(key);
-        column = defaultTableColumnModel.getColumn(columnIdx);
-        if (Objects.nonNull(columnWidthMap.get(key))) {
-          column.setPreferredWidth(columnWidthMap.get(key));
-        }
-      } catch (Exception e) {
-        System.out.println(key + " seems removed");
-      }
-    }
   }
 
 }

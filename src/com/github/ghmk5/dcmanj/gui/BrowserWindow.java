@@ -11,7 +11,6 @@ import java.awt.event.ComponentListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.sql.SQLException;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Objects;
 import javax.swing.AbstractAction;
@@ -30,9 +29,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
-import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
 import com.github.ghmk5.dcmanj.main.DcManJ;
@@ -62,7 +59,7 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
     mntm.addActionListener(new openNewWindow(this));
     menu.add(mntm);
     mntm = new JMenuItem("add new Entries...");
-    mntm.addActionListener(new mntmPackListner(this));
+    mntm.addActionListener(new openImptDlgListner(this));
     menu.add(mntm);
 
     JPanel panel = new JPanel();
@@ -148,7 +145,7 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
     // table.setSelectionForeground(Color.WHITE);
     // table.setSelectionBackground(UIManager.getColor("EditorPane.selectionBackground"));
 
-    HashMap<String, Integer> columnWidthMap = main.appInfo.getColumnWidthMap();
+    HashMap<String, Integer> columnWidthMap = main.appInfo.getColumnWidthMain();
     if (Objects.nonNull(columnWidthMap)) {
       table.setColumnWidth(columnWidthMap);
     }
@@ -158,6 +155,7 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
 
 
     this.setTitle("DcManJ");
+    this.setTitle("DcManJ(Dev)");
     this.pack();
   }
 
@@ -186,6 +184,23 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
       browserWindow.main.listBrowserWindows.add(newWindow);
       newWindow.setVisible(true);
     }
+  }
+
+  private static class openImptDlgListner implements ActionListener {
+    BrowserWindow browserWindow;
+
+    public openImptDlgListner(BrowserWindow browserWindow) {
+      this.browserWindow = browserWindow;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      String dirPath = browserWindow.main.appInfo.getImptDir();
+      ImportDialog importDialog = new ImportDialog(browserWindow, dirPath);
+      Util.setRect(importDialog, browserWindow.main.appInfo.getRectImpt());
+      importDialog.setVisible(true);
+    }
+
   }
 
   private static class mntmPackListner implements ActionListener {
@@ -236,8 +251,8 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
     main.listBrowserWindows.remove(this);
     if (main.listBrowserWindows.size() == 0) {
       main.appInfo.setRectMain(this.getBounds());
-      HashMap<String, Integer> columnWidthMap = getColumnWidth();
-      main.appInfo.setColumnWidthMap(columnWidthMap);
+      HashMap<String, Integer> columnWidthMap = table.getColumnWidth();
+      main.appInfo.setColumnWidthMain(columnWidthMap);
       Util.writeBean(main.prefFile, main.appInfo);
       this.setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
@@ -288,21 +303,6 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
 
   public static void setCascadingOffSetY(int cascadingOffSetY) {
     CascadingOffSetY = cascadingOffSetY;
-  }
-
-  private HashMap<String, Integer> getColumnWidth() {
-    HashMap<String, Integer> columnWidthMap = new HashMap<String, Integer>();
-    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) this.table.getColumnModel();
-    // int numColumns = columnModel.getColumnCount();
-    TableColumn tableColumn;
-    String identifier;
-    Enumeration<TableColumn> e = columnModel.getColumns();
-    while (e.hasMoreElements()) {
-      tableColumn = e.nextElement();
-      identifier = (String) tableColumn.getIdentifier();
-      columnWidthMap.put(identifier, tableColumn.getWidth());
-    }
-    return columnWidthMap;
   }
 
   public void refreshTable(String sql) throws SQLException {
