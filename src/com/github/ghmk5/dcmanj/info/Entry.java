@@ -240,7 +240,7 @@ public class Entry {
   }
 
   // ファイル名を生成
-  private String generateNameToSave() {
+  public String generateNameToSave() {
     StringBuilder sb = new StringBuilder();
     if (Objects.isNull(type)) {
       type = "unknown";

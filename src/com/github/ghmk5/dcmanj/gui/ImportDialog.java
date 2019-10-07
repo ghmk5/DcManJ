@@ -123,18 +123,20 @@ public class ImportDialog extends JDialog {
     entryMap = new HashMap<String, Entry>();
     ArrayList<String[]> dataList = new ArrayList<String[]>();
     String[] outAry;
-    for (File entry : impDir.listFiles()) {
+    Entry entry;
+    for (File file : impDir.listFiles()) {
       outAry = new String[3];
-      if (entry.isFile()) {
+      if (file.isFile()) {
         outAry[0] = "file";
-      } else if (entry.isDirectory()) {
+      } else if (file.isDirectory()) {
         outAry[0] = "directory";
       } else {
         outAry[0] = "unknown (simlink?)";
       }
-      outAry[1] = entry.getName();
-      entryMap.put(outAry[1], new Entry(outAry[1]));
-      outAry[2] = "";
+      outAry[1] = file.getName();
+      entry = new Entry(outAry[1]);
+      entryMap.put(outAry[1], entry);
+      outAry[2] = entry.generateNameToSave();
       dataList.add(outAry);
     }
 
