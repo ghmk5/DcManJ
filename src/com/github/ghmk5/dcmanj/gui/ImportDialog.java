@@ -68,6 +68,7 @@ public class ImportDialog extends JDialog {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2) {
           // TODO Entry設定ダイアログを開く処理--コンテキストメニューから呼んだときと共通なので、メソッド化する
+          openAttrDialog();
         }
       }
     });
@@ -155,6 +156,11 @@ public class ImportDialog extends JDialog {
     table.setRowSorter(new TableRowSorter<>((DefaultTableModel) table.getModel()));
   }
 
+  private void openAttrDialog() {
+    AttrDialog attrDialog = new AttrDialog(this);
+    attrDialog.setVisible(true);
+  }
+
   private class ChangeDirAction extends AbstractAction {
 
     ImportDialog importDialog;
@@ -202,5 +208,7 @@ public class ImportDialog extends JDialog {
       }
     }
   }
+
+
 
 }
