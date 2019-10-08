@@ -6,10 +6,8 @@ import java.awt.FlowLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Objects;
@@ -35,7 +33,7 @@ import javax.swing.text.JTextComponent;
 import com.github.ghmk5.dcmanj.main.DcManJ;
 import com.github.ghmk5.dcmanj.util.Util;
 
-public class BrowserWindow extends JFrame implements WindowListener, ComponentListener {
+public class BrowserWindow extends JFrame {
 
   DcManJ main;
   static int CascadingOffSetX = 20;
@@ -47,7 +45,7 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
   public BrowserWindow(DcManJ main) {
     super();
     this.main = main;
-    this.addWindowListener(this);
+    this.addWindowListener(new BrowserWindowListner());
 
     this.getContentPane().setLayout(new BorderLayout());
 
@@ -70,7 +68,6 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
     panel.add(tabbedPane);
 
     JPanel tabPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
-    // panel.add(upperPanel);
     tabbedPane.addTab("通常検索", tabPanel);
 
     queryField = new JTextField(36);
@@ -138,12 +135,8 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
     panel.add(lowerPanel);
 
     table = new BrowserTable(main);
-
     table.getTableHeader().setFont(main.tableFont);
-
     table.setFont(main.tableFont);
-    // table.setSelectionForeground(Color.WHITE);
-    // table.setSelectionBackground(UIManager.getColor("EditorPane.selectionBackground"));
 
     HashMap<String, Integer> columnWidthMap = main.appInfo.getColumnWidthMain();
     if (Objects.nonNull(columnWidthMap)) {
@@ -152,7 +145,6 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
 
     JScrollPane scrollPane = new JScrollPane(table);
     lowerPanel.add(scrollPane, BorderLayout.CENTER);
-
 
     this.setTitle("DcManJ");
     this.setTitle("DcManJ(Dev)");
@@ -216,77 +208,31 @@ public class BrowserWindow extends JFrame implements WindowListener, ComponentLi
     }
   }
 
-  @Override
-  public void componentResized(ComponentEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void componentMoved(ComponentEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void componentShown(ComponentEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void componentHidden(ComponentEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void windowOpened(WindowEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void windowClosing(WindowEvent e) {
-    main.listBrowserWindows.remove(this);
-    if (main.listBrowserWindows.size() == 0) {
-      main.appInfo.setRectMain(this.getBounds());
-      HashMap<String, Integer> columnWidthMap = table.getColumnWidth();
-      main.appInfo.setColumnWidthMain(columnWidthMap);
-      Util.writeBean(main.prefFile, main.appInfo);
-      this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+  private class BrowserWindowListner extends WindowAdapter {
+    public void windowClosing(WindowEvent e) {
+      // タイトルバーのクローズボックスクリックで閉じられてときに呼ばれる
+      saveInfo((Window) e.getSource());
     }
 
-  }
+    public void windowClosed(WindowEvent e) {
+      // dispose()されたときに呼ばれる
+      saveInfo((Window) e.getSource());
+    }
 
-  @Override
-  public void windowClosed(WindowEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void windowIconified(WindowEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void windowDeiconified(WindowEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void windowActivated(WindowEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
-  }
-
-  @Override
-  public void windowDeactivated(WindowEvent e) {
-    // TODO 自動生成されたメソッド・スタブ
-
+    private void saveInfo(Window window) {
+      try {
+        main.listBrowserWindows.remove((BrowserWindow) window);
+        if (main.listBrowserWindows.size() == 0) {
+          main.appInfo.setRectMain(window.getBounds());
+          HashMap<String, Integer> columnWidthMap = table.getColumnWidth();
+          main.appInfo.setColumnWidthMain(columnWidthMap);
+          Util.writeBean(main.prefFile, main.appInfo);
+          ((BrowserWindow) window).setDefaultCloseOperation(EXIT_ON_CLOSE);
+        }
+      } catch (Exception e) {
+        throw e;
+      }
+    }
   }
 
   public static int getCascadingOffSetX() {
