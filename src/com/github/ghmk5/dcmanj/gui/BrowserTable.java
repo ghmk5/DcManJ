@@ -22,7 +22,6 @@ import javax.swing.Action;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
-import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -95,29 +94,39 @@ public class BrowserTable extends ExtendedTable {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2 && getSelectedRows().length == 1) {
           try {
-            int rowid = getEntries().get(0).getId();
-            String sql = "select rowid, * from magdb where rowid = " + String.valueOf(rowid) + ";";
-            Runtime runtime = Runtime.getRuntime();
-            Connection connection = DriverManager.getConnection(main.conArg);
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sql);
-            String path = resultSet.getString("path");
-            resultSet.close();
-            statement.close();
-            connection.close();
-            String filerExecutablePath = "C:/Program Files/Honeyview/Honeyview.exe";
-            String commandString = "\"" + filerExecutablePath + "\" " + path;
-            // TODO 初期設定の画像ビューワ指定部分ができたら上2行を編集
-            // cmdに与える引数ではダブルクォートの扱いが特殊なので注意すること
-            // 参考 https://www.pg-fl.jp/program/dos/doscmd/cmd.htm
-            String[] command = {"cmd", "/c", commandString};
+            String[] command = {"cmd", "/c", "\"" + main.appInfo.getViewerPath() + "\" "
+                + getEntries().get(0).getPath().toString()};
             // String[] command =
             // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
-            runtime.exec(command);
-          } catch (SQLException | IOException e) {
+            Runtime.getRuntime().exec(command);
+          } catch (SQLException | IOException e1) {
             // TODO 自動生成された catch ブロック
-            e.printStackTrace();
+            e1.printStackTrace();
           }
+          // try {
+          // int rowid = getEntries().get(0).getId();
+          // String sql = "select rowid, * from magdb where rowid = " + String.valueOf(rowid) + ";";
+          // Runtime runtime = Runtime.getRuntime();
+          // Connection connection = DriverManager.getConnection(main.conArg);
+          // Statement statement = connection.createStatement();
+          // ResultSet resultSet = statement.executeQuery(sql);
+          // String path = resultSet.getString("path");
+          // resultSet.close();
+          // statement.close();
+          // connection.close();
+          // String filerExecutablePath = "C:/Program Files/Honeyview/Honeyview.exe";
+          // String commandString = "\"" + filerExecutablePath + "\" " + path;
+          // // TODO 初期設定の画像ビューワ指定部分ができたら上2行を編集
+          // // cmdに与える引数ではダブルクォートの扱いが特殊なので注意すること
+          // // 参考 https://www.pg-fl.jp/program/dos/doscmd/cmd.htm
+          // String[] command = {"cmd", "/c", commandString};
+          // // String[] command =
+          // // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
+          // runtime.exec(command);
+          // } catch (SQLException | IOException e) {
+          // // TODO 自動生成された catch ブロック
+          // e.printStackTrace();
+          // }
 
         }
       }
@@ -356,11 +365,9 @@ public class BrowserTable extends ExtendedTable {
   private ArrayList<Entry> getEntries() throws SQLException {
     ArrayList<Entry> listEntries = new ArrayList<Entry>();
     Entry entry;
-    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
-    int tableColumnIdx = columnModel.getColumnIndex("ID");
-    for (int tableRowIdx : getSelectedRows()) {
-      tableRowIdx = convertRowIndexToModel(tableRowIdx);
-      int dbRowID = (int) getModel().getValueAt(tableRowIdx, tableColumnIdx);
+
+    for (Object object : getSelectedColumnValues("ID")) {
+      Integer dbRowID = (Integer) object;
       String sql = "select rowid, * from magdb where rowid = " + String.valueOf(dbRowID) + ";";
       Connection connection = DriverManager.getConnection(main.conArg);
       Statement statement = connection.createStatement();
@@ -374,6 +381,7 @@ public class BrowserTable extends ExtendedTable {
       connection.close();
     }
     return listEntries;
+
   }
 
   // public void refresh(ResultSet resultSet) throws SQLException {

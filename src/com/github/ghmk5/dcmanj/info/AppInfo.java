@@ -2,15 +2,19 @@ package com.github.ghmk5.dcmanj.info;
 
 import java.awt.Rectangle;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class AppInfo {
 
   Rectangle rectMain;
   Rectangle rectPref;
   Rectangle rectImpt;
+  Rectangle rectAttr;
   HashMap<String, Integer> columnWidthMain;
   HashMap<String, Integer> columnWidthImpt;
   String imptDir;
+  String saveDir;
+  String viewerPath;
 
   /**
    * アプリケーション設定情報をBeanとして扱うためのクラス
@@ -26,6 +30,7 @@ public class AppInfo {
     this.rectMain = (Rectangle) archRectangle.clone();
     this.rectPref = (Rectangle) archRectangle.clone();
     this.rectImpt = (Rectangle) archRectangle.clone();
+    this.rectAttr = (Rectangle) archRectangle.clone();
 
   }
 
@@ -75,6 +80,34 @@ public class AppInfo {
 
   public void setImptDir(String imptDir) {
     this.imptDir = imptDir;
+  }
+
+  public Rectangle getRectAttr() {
+    return rectAttr;
+  }
+
+  public void setRectAttr(Rectangle rectAttr) {
+    this.rectAttr = rectAttr;
+  }
+
+  public String getSaveDir() {
+    if (Objects.isNull(saveDir)) {
+      return System.getProperty("user.home");
+    } else {
+      return saveDir;
+    }
+  }
+
+  public void setSaveDir(String saveDir) {
+    this.saveDir = saveDir;
+  }
+
+  public String getViewerPath() {
+    return viewerPath;
+  }
+
+  public void setViewerPath(String viewerPath) {
+    this.viewerPath = viewerPath;
   }
 
 

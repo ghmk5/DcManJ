@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Objects;
@@ -23,7 +24,7 @@ import javax.swing.table.TableModel;
 /**
  * 拡張版JTable カラムヘッダクリックでソート可能 カラムヘッダ境界ダブルクリックで列幅調整可能 マウスオーバーでセル内容をToolTipText表示 これら以外にOverrideしたい場合は
  * ExtendedTable exTable = new ExtendedTable(dataModel) {
- * 
+ *
  * @Override public boolean isCellEditable(int row, int column) { return false; } }; とかやる
  */
 public class ExtendedTable extends JTable {
@@ -52,7 +53,7 @@ public class ExtendedTable extends JTable {
     super(dm);
   }
 
-  public ExtendedTable(Vector rowData, Vector columnNames) {
+  public ExtendedTable(Vector<? extends Vector> rowData, Vector<?> columnNames) {
     super(rowData, columnNames);
   }
 
@@ -113,6 +114,11 @@ public class ExtendedTable extends JTable {
     // HorizontalAlignmentHeaderRenderer(alignment));
   }
 
+  /**
+   * 列幅を設定する テーブルの列に予めidentifierを指定しておく必要がある
+   *
+   * @param columnWidthMap キーは列のidentifier, 値は列幅
+   */
   public void setColumnWidth(HashMap<String, Integer> columnWidthMap) {
     DefaultTableColumnModel defaultTableColumnModel = (DefaultTableColumnModel) getColumnModel();
     TableColumn column = null;
@@ -131,6 +137,11 @@ public class ExtendedTable extends JTable {
     }
   }
 
+  /**
+   * 列幅を記録したマップを返す
+   *
+   * @return HashMap<String, Integer> キーは列に設定されたidentifierr、値は列幅
+   */
   public HashMap<String, Integer> getColumnWidth() {
     HashMap<String, Integer> columnWidthMap = new HashMap<String, Integer>();
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
@@ -143,6 +154,18 @@ public class ExtendedTable extends JTable {
       columnWidthMap.put(identifier, tableColumn.getWidth());
     }
     return columnWidthMap;
+  }
+
+  public ArrayList<Object> getSelectedColumnValues(String identifier)
+      throws IllegalArgumentException {
+    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
+    int tableColumnIdx = columnModel.getColumnIndex(identifier);
+    ArrayList<Object> objectList = new ArrayList<Object>();
+    for (int tableRowIdx : getSelectedRows()) {
+      tableRowIdx = convertRowIndexToModel(tableRowIdx);
+      objectList.add(getModel().getValueAt(tableRowIdx, tableColumnIdx));
+    }
+    return objectList;
   }
 
   /**

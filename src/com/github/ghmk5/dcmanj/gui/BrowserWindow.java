@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Objects;
@@ -46,6 +47,9 @@ public class BrowserWindow extends JFrame {
     super();
     this.main = main;
     this.addWindowListener(new BrowserWindowListner());
+
+    this.setTitle("DcManJ");
+    this.setTitle("DcManJ(Dev)");
 
     this.getContentPane().setLayout(new BorderLayout());
 
@@ -146,8 +150,6 @@ public class BrowserWindow extends JFrame {
     JScrollPane scrollPane = new JScrollPane(table);
     lowerPanel.add(scrollPane, BorderLayout.CENTER);
 
-    this.setTitle("DcManJ");
-    this.setTitle("DcManJ(Dev)");
     this.pack();
   }
 
@@ -187,10 +189,15 @@ public class BrowserWindow extends JFrame {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-      String dirPath = browserWindow.main.appInfo.getImptDir();
-      ImportDialog importDialog = new ImportDialog(browserWindow, dirPath);
-      Util.setRect(importDialog, browserWindow.main.appInfo.getRectImpt());
-      importDialog.setVisible(true);
+      ImportDialog importDialog;
+      try {
+        importDialog = new ImportDialog(browserWindow);
+        Util.setRect(importDialog, browserWindow.main.appInfo.getRectImpt());
+        importDialog.setVisible(true);
+      } catch (IllegalArgumentException | IOException e1) {
+        // TODO 自動生成された catch ブロック
+        e1.printStackTrace();
+      }
     }
 
   }

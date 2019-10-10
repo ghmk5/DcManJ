@@ -1,6 +1,7 @@
 package com.github.ghmk5.dcmanj.info;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,6 +12,10 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
+import javax.swing.JOptionPane;
+import org.apache.commons.io.FileUtils;
 import com.github.ghmk5.dcmanj.util.Util;
 
 public class Entry {
@@ -57,7 +62,7 @@ public class Entry {
       }
       String fileName = file.getName();
       try {
-        Entry entry = new Entry(fileName);
+        Entry entry = new Entry(file);
 
         System.out.println(fileName);
         String[] outAry = {entry.type, entry.circle, entry.author, entry.title, entry.volume,
@@ -91,8 +96,9 @@ public class Entry {
 
   }
 
-  public Entry(String fileName) {
+  public Entry(File file) throws ZipException, IOException {
 
+    path = file.toPath();
     adult = false;
     isComic = false;
     isDoujinshi = false;
@@ -100,7 +106,7 @@ public class Entry {
     isNovel = false;
 
     // 拡張子があれば除く
-    String name = fileName.replaceFirst("\\.[a-zA-Z0-9]{1,4}$", "");
+    String name = file.getName().replaceFirst("\\.[a-zA-Z0-9]{1,4}$", "");
 
     // 正規化し、いくつかの文字を元に戻す(ファイル名に使えない文字関連はファイル生成時に別に変換)
     name = Normalizer.normalize(name, Normalizer.Form.NFKC);
@@ -237,89 +243,60 @@ public class Entry {
 
     // 可能なら種別をセット
     setType();
+
+    // サイズをセット
+    if (file.isFile()) {
+      size = file.length() / 1024d / 1024d;
+      if (file.getName().matches(".+\\.[Zz][Ii][Pp]$")) {
+        try {
+          ZipFile zipFile = new ZipFile(file);
+          pages = 0;
+          zipFile.stream().filter(x -> !x.isDirectory()).forEach(e -> {
+            pages++;
+          });
+        } catch (Exception e) {
+          JOptionPane.showMessageDialog(null,
+              "zipファイル " + file.getName() + " の内容を読み取れません(暗号化ファイル?)");
+          System.out.println(file.getName() + " has unreadable entries inside (encrytpted zip?).");
+        }
+      }
+    } else if (file.isDirectory()) {
+      size = FileUtils.sizeOfDirectory(file) / 1024d / 1024d;
+      pages = file.listFiles().length;
+    } else {
+      throw new IllegalArgumentException("Entryのコンストラクタ引数としてファイルでもディレクトリでもないオブジェクトが渡された");
+    }
   }
 
-  // ファイル名を生成
-  public String generateNameToSave() {
-    StringBuilder sb = new StringBuilder();
-    if (Objects.isNull(type)) {
-      type = "unknown";
-    }
-    switch (type) {
-      case "doujinshi":
-        if (Objects.nonNull(release)) {
-          sb.append("(" + release + ")");
-        }
-        sb.append("(同人誌)");
-        sb.append(" [");
-        if (Objects.nonNull(circle)) {
-          sb.append(circle);
-          if (Objects.nonNull(author)) {
-            sb.append(" (" + author + ")");
-          }
-          sb.append("] ");
-        } else if (Objects.nonNull(author)) {
-          sb.append(author + "] ");
-        } else {
-          sb.append("サークル不詳] ");
-        }
-        break;
-      case "comic":
-        if (adult) {
-          sb.append("(成年コミック)");
-        } else {
-          sb.append("(一般コミック)");
-        }
-        sb.append(" [");
-        if (Objects.nonNull(author)) {
-          sb.append(author + "] ");
-        } else {
-          sb.append("著者不詳] ");
-        }
-        break;
-      case "magazine":
-        if (adult) {
-          sb.append("(成年コミック) [雑誌] ");
-        } else {
-          sb.append("(一般コミック) [雑誌] ");
-        }
-        break;
-      case "novel":
-        sb.append("(小説)");
-        if (Objects.nonNull(author)) {
-          sb.append(author + "] ");
-        } else {
-          sb.append("著者不詳] ");
-        }
-        break;
-      default:
-        sb.append("(種別不詳) [");
-        if (Objects.nonNull(author)) {
-          sb.append(author + "] ");
-        } else {
-          sb.append("著者不詳] ");
-        }
-    }
+  /**
+   * データベースの戻り値からEntryのインスタンスを生成する データベースに要求するフィールドは 'rowid, *'でなければならない
+   *
+   * @param resultSet
+   * @throws SQLException
+   */
+  public Entry(ResultSet resultSet) throws SQLException {
 
-    sb.append(title);
-
-    if (Objects.nonNull(volume)) {
-      sb.append(" " + volume);
+    id = resultSet.getInt("rowid");
+    type = resultSet.getString("type");
+    adult = Boolean.valueOf(resultSet.getString("adult"));
+    circle = resultSet.getString("circle");
+    author = resultSet.getString("author");
+    title = resultSet.getString("title");
+    subtitle = resultSet.getString("subtitle");
+    volume = resultSet.getString("volume");
+    issue = resultSet.getString("issue");
+    note = resultSet.getString("note");
+    pages = resultSet.getInt("pages");
+    size = resultSet.getDouble("size");
+    path = Path.of(resultSet.getString("path"));
+    if (Objects.nonNull(resultSet.getString("date"))) {
+      date = OffsetDateTime.parse(resultSet.getString("date"), Util.DTF);
+    } else {
+      date = null;
     }
+    original = resultSet.getString("original");
+    release = resultSet.getString("release");
 
-    if (Objects.nonNull(subtitle)) {
-      sb.append(" " + subtitle);
-    }
-
-    if (Objects.nonNull(note)) {
-      sb.append(" ");
-      ArrayList<String> noteAsList = new ArrayList<String>(Arrays.asList(note.split(",")));
-      for (String element : noteAsList) {
-        sb.append("(" + element + ")");
-      }
-    }
-
-    return sb.toString();
   }
 
   // フラグ値からエントリ種別を判定してtypeフィールドに代入
@@ -460,34 +437,38 @@ public class Entry {
   }
 
   /**
-   * データベースの戻り値からEntryのインスタンスを生成する データベースに要求するフィールドは 'rowid, *'でなければならない
+   * エントリのデータ実体をコピー/移動する
    *
-   * @param resultSet
-   * @throws SQLException
+   * @param destFile コピー/移動先
+   * @param changePath Entryインスタンスのpathフィールドを書き換えるか否か
+   * @param leftSource 元のデータ実体を残すか否か
+   * @throws IOException 移動元にアクセスできなかった場合
+   * @throws IllegalArgumentException 元のデータ実体がファイルでもディレクトリでもなかった場合
    */
-  public Entry(ResultSet resultSet) throws SQLException {
+  public void moveTo(File destFile, Boolean changePath, Boolean leftSource) throws IOException {
 
-    id = resultSet.getInt("rowid");
-    type = resultSet.getString("type");
-    adult = Boolean.valueOf(resultSet.getString("adult"));
-    circle = resultSet.getString("circle");
-    author = resultSet.getString("author");
-    title = resultSet.getString("title");
-    subtitle = resultSet.getString("subtitle");
-    volume = resultSet.getString("volume");
-    issue = resultSet.getString("issue");
-    note = resultSet.getString("note");
-    pages = resultSet.getInt("pages");
-    size = resultSet.getDouble("size");
-    path = Path.of(resultSet.getString("path"));
-    if (Objects.nonNull(resultSet.getString("date"))) {
-      date = OffsetDateTime.parse(resultSet.getString("date"), Util.DTF);
+    File srcFile = getPath().toFile();
+
+    if (srcFile.isFile()) {
+      if (leftSource) {
+        FileUtils.copyFile(srcFile, destFile);
+      } else {
+        FileUtils.moveFile(srcFile, destFile);
+      }
+    } else if (srcFile.isDirectory()) {
+      if (leftSource) {
+        FileUtils.copyDirectory(srcFile, destFile);
+      } else {
+        FileUtils.moveDirectory(srcFile, destFile);
+      }
     } else {
-      date = null;
+      throw new IllegalArgumentException(
+          "Entry.moveToメソッドにファイルでもディレクトリでもないFileオブジェクトが渡された(シンボリックリンク?)");
     }
-    original = resultSet.getString("original");
-    release = resultSet.getString("release");
 
+    if (changePath) {
+      setPath(destFile.toPath());
+    }
   }
 
   /**
@@ -506,6 +487,89 @@ public class Entry {
         getSubtitle(), getVolume(), getIssue(), getEntryTitle(), getNote(), getPages(), getSize(),
         getPath().toString(), dateString, getOriginal(), getRelease()};
     return row;
+  }
+
+  // ファイル名を生成
+  public String generateNameToSave() {
+    StringBuilder sb = new StringBuilder();
+    if (Objects.isNull(type)) {
+      type = "unknown";
+    }
+    switch (type) {
+      case "doujinshi":
+        if (Objects.nonNull(release)) {
+          sb.append("(" + release + ")");
+        }
+        sb.append("(同人誌)");
+        sb.append(" [");
+        if (Objects.nonNull(circle)) {
+          sb.append(circle);
+          if (Objects.nonNull(author)) {
+            sb.append(" (" + author + ")");
+          }
+          sb.append("] ");
+        } else if (Objects.nonNull(author)) {
+          sb.append(author + "] ");
+        } else {
+          sb.append("サークル不詳] ");
+        }
+        break;
+      case "comic":
+        if (adult) {
+          sb.append("(成年コミック)");
+        } else {
+          sb.append("(一般コミック)");
+        }
+        sb.append(" [");
+        if (Objects.nonNull(author)) {
+          sb.append(author + "] ");
+        } else {
+          sb.append("著者不詳] ");
+        }
+        break;
+      case "magazine":
+        if (adult) {
+          sb.append("(成年コミック) [雑誌] ");
+        } else {
+          sb.append("(一般コミック) [雑誌] ");
+        }
+        break;
+      case "novel":
+        sb.append("(小説)");
+        if (Objects.nonNull(author)) {
+          sb.append(author + "] ");
+        } else {
+          sb.append("著者不詳] ");
+        }
+        break;
+      default:
+        sb.append("(種別不詳) [");
+        if (Objects.nonNull(author)) {
+          sb.append(author + "] ");
+        } else {
+          sb.append("著者不詳] ");
+        }
+    }
+
+    sb.append(title);
+
+    if (Objects.nonNull(volume)) {
+      sb.append(" " + volume);
+    }
+
+    if (Objects.nonNull(subtitle)) {
+      sb.append(" " + subtitle);
+    }
+
+    if (Objects.nonNull(note)) {
+      sb.append(" ");
+      ArrayList<String> noteAsList = new ArrayList<String>(Arrays.asList(note.split(",")));
+      for (String element : noteAsList) {
+        sb.append("(" + element + ")");
+      }
+    }
+
+    return sb.toString();
   }
 
   /**
