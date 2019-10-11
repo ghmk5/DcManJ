@@ -333,6 +333,11 @@ public class AttrDialog extends JDialog {
         } else if (!string.equals("--ununified values--")) {
           entry.setRelease(string);
         }
+        if (owner instanceof ImportDialog) {
+          ((ImportDialog) owner).updateTable();
+        } else if (owner instanceof BrowserWindow) {
+          // TODO ファイル名変更 データベース更新 テーブル表示更新
+        }
         attrDialog.dispose();
       }
     }

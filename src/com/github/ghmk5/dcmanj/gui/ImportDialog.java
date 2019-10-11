@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
+import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -27,6 +28,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -68,13 +71,16 @@ public class ImportDialog extends JDialog {
     JButton changeDirButton = new JButton("Change Dir");
     changeDirButton.addActionListener(new ChangeDirAction(this));
     panel.add(changeDirButton);
+    Box box = Box.createHorizontalBox();
     ButtonGroup storeFormBG = new ButtonGroup();
     JRadioButton zipRB = new JRadioButton("zipして保管");
-    panel.add(zipRB);
+    box.add(zipRB);
     storeFormBG.add(zipRB);
     JRadioButton bareRB = new JRadioButton("フォルダのまま保管");
-    panel.add(bareRB);
+    box.add(bareRB);
+    box.setBorder(new TitledBorder("元がディレクトリの場合"));
     storeFormBG.add(bareRB);
+    panel.add(box);
     table = new ExtendedTable();
     table.getTableHeader().setFont(browserWindow.main.tableFont);
     table.setFont(browserWindow.main.tableFont);
@@ -185,6 +191,21 @@ public class ImportDialog extends JDialog {
     attrDialog.setVisible(true);
   }
 
+  void updateTable() {
+    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
+    String fileName;
+    Entry entry;
+    for (int tableRowIdx : table.getSelectedRows()) {
+      tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
+      fileName = (String) table.getModel().getValueAt(tableRowIdx,
+          columnModel.getColumnIndex("Current Name"));
+      entry = entryMap.get(fileName);
+      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx,
+          columnModel.getColumnIndex("Name to Store"));
+      // TODO テーブルカラムを増設した場合は他のカラムを更新する処理を加える
+    }
+  }
+
   private class ChangeDirAction extends AbstractAction {
 
     ImportDialog importDialog;
@@ -257,18 +278,29 @@ public class ImportDialog extends JDialog {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-          for (Object fileName : table.getSelectedColumnValues("Current Name")) {
-            Entry entry = entryMap.get((String) fileName);
+
+          DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
+          String fileName;
+          Entry entry;
+          for (int tableRowIdx : table.getSelectedRows()) {
+            tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
+            fileName = (String) table.getModel().getValueAt(tableRowIdx,
+                columnModel.getColumnIndex("Current Name"));
+            entry = entryMap.get(fileName);
             if (Objects.nonNull(entry.getNote())) {
               ArrayList<String> noteList =
                   new ArrayList<String>(Arrays.asList(entry.getNote().split(",")));
               String lastElement = noteList.get(noteList.size() - 1);
               entry.setOriginal(lastElement);
               noteList.remove(lastElement);
-              entry.setNote(String.join(",", noteList.toArray(new String[noteList.size()])));
+              if (noteList.size() > 0) {
+                entry.setNote(String.join(",", noteList.toArray(new String[noteList.size()])));
+              } else {
+                entry.setNote(null);
+              }
             }
           }
-
+          updateTable();
         }
       });
 
