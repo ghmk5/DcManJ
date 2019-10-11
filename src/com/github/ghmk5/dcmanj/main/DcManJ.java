@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import javax.swing.ToolTipManager;
 import com.github.ghmk5.dcmanj.gui.BrowserWindow;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.util.Util;
@@ -31,6 +32,11 @@ public class DcManJ {
 
 
   public static void main(String[] args) throws URISyntaxException, IOException, SQLException {
+
+    // 明示的にアンチエイリアスをオンにする WindowsでL&Fに"Windows"または"WindowsClassic"を指定したとき以外は
+    // デフォルトでONなので意味がないが、悪影響もないようなのでそのままで良い
+    System.setProperty("awt.useSystemAAFontSettings", "on");
+    System.setProperty("swing.aatext", "true");
 
     DcManJ main = new DcManJ();
     main.initialize();
@@ -106,8 +112,19 @@ public class DcManJ {
       e2.printStackTrace();
     }
 
+    // L&FをOSデフォルトに設定する(Windowsでは"Windows"、MacOSでは"MacOS"
+    // これをやらないと、WindowsではMetalが使用される。MacOSでは無指定でMacOSが使用されるので関係ない
+    // try {
+    // UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    // } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+    // | UnsupportedLookAndFeelException ex) {
+    // ex.printStackTrace();
+    // Toolkit.getDefaultToolkit().beep();
+    // }
+
     listBrowserWindows = new ArrayList<BrowserWindow>();
 
+    ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
   }
 
 }
