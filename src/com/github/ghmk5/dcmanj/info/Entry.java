@@ -20,6 +20,7 @@ import com.github.ghmk5.dcmanj.util.Util;
 
 public class Entry {
 
+  // 書誌情報
   Integer id;
   String type;
   Boolean adult;
@@ -46,57 +47,11 @@ public class Entry {
   Boolean isMagazine;
   Boolean isNovel;
 
-  // 前置・後置タグ群のパースに使う正規表現 最終的には設定パネルから入力できるようにする
-  String[] eventKeys = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭", "神戸かわさき",
-      "砲雷", "夜戦に突入す", "もう何も恐くない", "みみけっと", "ふたけっと", "ぱんっあ☆ふぉー", "とら祭り", "こみトレ", "^SC\\d{2}", "Cレヴォ",
-      "C[Oo][Mm][Ii][Cc]1☆"};
-  String[] noteKeys = {"DL版", "CG集", "別スキャン", "^+", "補完", "雑誌寄せ集め", "修正版"};
+  AppInfo appInfo;
 
-  public static void main(String[] args) {
+  public Entry(File file, AppInfo appInfo) throws ZipException, IOException {
 
-
-    File dir = new File("D:\\docs\\mk5\\Downloads\\nty");
-    for (File file : dir.listFiles()) {
-      if (!file.isFile()) {
-        continue;
-      }
-      String fileName = file.getName();
-      try {
-        Entry entry = new Entry(file);
-
-        System.out.println(fileName);
-        String[] outAry = {entry.type, entry.circle, entry.author, entry.title, entry.volume,
-            entry.subtitle, entry.issue, entry.note, entry.release};
-        String[] tagAry =
-            {"type", "circle", "author", "title", "volume", "subtitle", "issue", "note", "release"};
-
-        for (int i = 0; i < outAry.length; i++) {
-          System.out.println("  " + tagAry[i] + ": " + outAry[i]);
-        }
-
-        System.out.println("  nameToSave: " + entry.generateNameToSave());
-
-        System.out.println("");
-
-        Boolean[] booleans =
-            {entry.adult, entry.isDoujinshi, entry.isComic, entry.isMagazine, entry.isNovel};
-        String[] tagAry2 = {"adult", "isDoujinshi", "isComic", "isMagazine", "isNovel"};
-        for (int i = 0; i < booleans.length; i++) {
-          System.out.println("  " + tagAry2[i] + ": " + String.valueOf(booleans[i]));
-        }
-
-        System.out.println("");
-
-      } catch (Exception e) {
-        System.out.println(fileName);
-        System.out.println("  failed to parse");
-        e.printStackTrace();
-      }
-    }
-
-  }
-
-  public Entry(File file) throws ZipException, IOException {
+    this.appInfo = appInfo;
 
     path = file.toPath();
     adult = false;
@@ -335,7 +290,7 @@ public class Entry {
     }
     String foundString;
     for (String postPosition : postPositionsList) {
-      for (String regEx : noteKeys) {
+      for (String regEx : appInfo.getNoteRegExStrings()) {
         Pattern pattern = Pattern.compile(regEx);
         Matcher matcher = pattern.matcher(postPosition);
         if (matcher.find()) {
@@ -378,7 +333,7 @@ public class Entry {
     ArrayList<String> elementsToRemove = new ArrayList<String>();
     if (Objects.nonNull(prePositions)) {
       for (String prePosition : prePositionsList) {
-        for (String evRegex : eventKeys) {
+        for (String evRegex : appInfo.getEvRexExStrings()) {
           Pattern pattern = Pattern.compile(evRegex);
           Matcher matcher = pattern.matcher(prePosition);
           if (matcher.find()) {

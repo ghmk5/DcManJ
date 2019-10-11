@@ -152,7 +152,7 @@ public class ImportDialog extends JDialog {
         outAry[0] = "unknown (simlink?)";
       }
       outAry[1] = file.getName();
-      entry = new Entry(file);
+      entry = new Entry(file, browserWindow.main.appInfo);
       entryMap.put(outAry[1], entry);
       outAry[2] = entry.generateNameToSave();
       dataList.add(outAry);
@@ -202,7 +202,8 @@ public class ImportDialog extends JDialog {
       if (selected == JFileChooser.APPROVE_OPTION) {
         importDialog.dirPath = fileChooser.getSelectedFile().toString();
         importDialog.browserWindow.main.appInfo.setImptDir(dirPath);
-        Util.writeBean(importDialog.browserWindow.main.prefFile, dirPath);
+        Util.writeBean(importDialog.browserWindow.main.prefFile,
+            importDialog.browserWindow.main.appInfo);
         try {
           readEntries();
         } catch (IOException e1) {

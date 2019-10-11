@@ -7,6 +7,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -20,6 +21,7 @@ import java.util.Objects;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JMenu;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
@@ -93,15 +95,20 @@ public class BrowserTable extends ExtendedTable {
     addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2 && getSelectedRows().length == 1) {
-          try {
-            String[] command = {"cmd", "/c", "\"" + main.appInfo.getViewerPath() + "\" "
-                + getEntries().get(0).getPath().toString()};
-            // String[] command =
-            // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
-            Runtime.getRuntime().exec(command);
-          } catch (SQLException | IOException e1) {
-            // TODO 自動生成された catch ブロック
-            e1.printStackTrace();
+          String viewerPath = main.appInfo.getViewerPath();
+          if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
+            try {
+              String[] command = {"cmd", "/c",
+                  "\"" + viewerPath + "\" " + getEntries().get(0).getPath().toString()};
+              // String[] command =
+              // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
+              Runtime.getRuntime().exec(command);
+            } catch (SQLException | IOException e1) {
+              // TODO 自動生成された catch ブロック
+              e1.printStackTrace();
+            }
+          } else {
+            JOptionPane.showMessageDialog(null, "ビューワアプリケーションが設定されていません");
           }
           // try {
           // int rowid = getEntries().get(0).getId();

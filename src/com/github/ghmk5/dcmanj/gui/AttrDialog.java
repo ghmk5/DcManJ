@@ -159,8 +159,6 @@ public class AttrDialog extends JDialog {
     generatedFileNameLabel.setBorder(new TitledBorder("保存ファイル/ディレクトリ名"));
     box.add(generatedFileNameLabel);
 
-
-
     panel = new JPanel();
     getContentPane().add(panel, BorderLayout.SOUTH);
     panel.setLayout(new FlowLayout(FlowLayout.TRAILING));

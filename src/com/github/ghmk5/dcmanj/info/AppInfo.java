@@ -15,6 +15,12 @@ public class AppInfo {
   String imptDir;
   String saveDir;
   String viewerPath;
+  String[] evRexExStrings;
+  String[] defaultEvRexExStrings = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭",
+      "神戸かわさき", "砲雷", "夜戦に突入す", "もう何も恐くない", "みみけっと", "ふたけっと", "ぱんっあ☆ふぉー", "とら祭り", "こみトレ",
+      "^SC\\d{2}", "Cレヴォ", "C[Oo][Mm][Ii][Cc]1☆"};
+  String[] noteRegExStrings;
+  String[] defaultNoteRegExStrings = {"DL版", "CG集", "別スキャン", "^+", "補完", "雑誌寄せ集め", "修正版"};
 
   /**
    * アプリケーション設定情報をBeanとして扱うためのクラス
@@ -108,6 +114,30 @@ public class AppInfo {
 
   public void setViewerPath(String viewerPath) {
     this.viewerPath = viewerPath;
+  }
+
+  public String[] getEvRexExStrings() {
+    if (Objects.nonNull(evRexExStrings)) {
+      return evRexExStrings;
+    } else {
+      return defaultEvRexExStrings;
+    }
+  }
+
+  public void setEvRexExStrings(String[] evRexExStrings) {
+    this.evRexExStrings = evRexExStrings;
+  }
+
+  public String[] getNoteRegExStrings() {
+    if (Objects.nonNull(noteRegExStrings)) {
+      return noteRegExStrings;
+    } else {
+      return defaultNoteRegExStrings;
+    }
+  }
+
+  public void setNoteRegExStrings(String[] noteRegExStrings) {
+    this.noteRegExStrings = noteRegExStrings;
   }
 
 

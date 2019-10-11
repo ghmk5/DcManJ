@@ -61,7 +61,10 @@ public class BrowserWindow extends JFrame {
     mntm.addActionListener(new openNewWindow(this));
     menu.add(mntm);
     mntm = new JMenuItem("add new Entries...");
-    mntm.addActionListener(new openImptDlgListner(this));
+    mntm.addActionListener(new OpenImptDlgListner(this));
+    menu.add(mntm);
+    mntm = new JMenuItem("設定");
+    mntm.addActionListener(new OpenPrefsDlgListner(this));
     menu.add(mntm);
 
     JPanel panel = new JPanel();
@@ -180,10 +183,10 @@ public class BrowserWindow extends JFrame {
     }
   }
 
-  private static class openImptDlgListner implements ActionListener {
+  private static class OpenImptDlgListner implements ActionListener {
     BrowserWindow browserWindow;
 
-    public openImptDlgListner(BrowserWindow browserWindow) {
+    public OpenImptDlgListner(BrowserWindow browserWindow) {
       this.browserWindow = browserWindow;
     }
 
@@ -198,6 +201,22 @@ public class BrowserWindow extends JFrame {
         // TODO 自動生成された catch ブロック
         e1.printStackTrace();
       }
+    }
+
+  }
+
+  private static class OpenPrefsDlgListner implements ActionListener {
+    BrowserWindow browserWindow;
+
+    public OpenPrefsDlgListner(BrowserWindow browserWindow) {
+      this.browserWindow = browserWindow;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      PrefsDialog prefsDialog = new PrefsDialog(browserWindow);
+      Util.setRect(prefsDialog, browserWindow.main.appInfo.getRectPref());
+      prefsDialog.setVisible(true);
     }
 
   }
