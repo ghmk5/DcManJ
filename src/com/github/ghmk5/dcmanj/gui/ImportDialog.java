@@ -125,10 +125,8 @@ public class ImportDialog extends JDialog {
     panel.add(applyButton);
 
     addWindowListener(new ImportDialogListner());
-
+    Util.mapESCtoCancel(this);
     readEntries();
-
-    // pack();
 
   }
 

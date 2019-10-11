@@ -28,6 +28,7 @@ public class PrefsDialog extends JDialog {
     super(owner);
     this.owner = owner;
     this.appInfo = this.owner.main.appInfo;
+    Util.mapESCtoCancel(this);
     initialize();
   }
 

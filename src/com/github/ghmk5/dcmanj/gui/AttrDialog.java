@@ -72,6 +72,7 @@ public class AttrDialog extends JDialog {
     }
 
     createGUI();
+    Util.mapESCtoCancel(this);
     loadValues(entryList);
   }
 
