@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -37,7 +38,9 @@ import javax.swing.Action;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
+import com.github.ghmk5.dcmanj.info.AppInfo;
 
 public class Util {
 
@@ -299,6 +302,23 @@ public class Util {
     result = result.replaceAll("%", "^%");
     result = "\'%" + result + "%\'";
     return result;
+  }
+
+  public static void openWithViewer(AppInfo appInfo, com.github.ghmk5.dcmanj.info.Entry entry) {
+    String viewerPath = appInfo.getViewerPath();
+    if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
+      try {
+        String[] command = {"cmd", "/c", "\"" + viewerPath + "\" " + entry.getPath().toString()};
+        // String[] command =
+        // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
+        Runtime.getRuntime().exec(command);
+      } catch (IOException e1) {
+        // TODO 自動生成された catch ブロック
+        e1.printStackTrace();
+      }
+    } else {
+      JOptionPane.showMessageDialog(null, "ビューワアプリケーションが設定されていません");
+    }
   }
 
 }

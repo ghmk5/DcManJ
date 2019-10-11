@@ -7,7 +7,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -21,13 +20,13 @@ import java.util.Objects;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JMenu;
-import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.main.DcManJ;
+import com.github.ghmk5.dcmanj.util.Util;
 
 public class BrowserTable extends ExtendedTable {
   DcManJ main;
@@ -95,46 +94,12 @@ public class BrowserTable extends ExtendedTable {
     addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2 && getSelectedRows().length == 1) {
-          String viewerPath = main.appInfo.getViewerPath();
-          if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
-            try {
-              String[] command = {"cmd", "/c",
-                  "\"" + viewerPath + "\" " + getEntries().get(0).getPath().toString()};
-              // String[] command =
-              // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
-              Runtime.getRuntime().exec(command);
-            } catch (SQLException | IOException e1) {
-              // TODO 自動生成された catch ブロック
-              e1.printStackTrace();
-            }
-          } else {
-            JOptionPane.showMessageDialog(null, "ビューワアプリケーションが設定されていません");
+          try {
+            Util.openWithViewer(main.appInfo, getEntries().get(0));
+          } catch (SQLException e) {
+            System.out.println("BrowserTableの選択行からEntryを取得する際にSQL例外が発生した");
+            e.printStackTrace();
           }
-          // try {
-          // int rowid = getEntries().get(0).getId();
-          // String sql = "select rowid, * from magdb where rowid = " + String.valueOf(rowid) + ";";
-          // Runtime runtime = Runtime.getRuntime();
-          // Connection connection = DriverManager.getConnection(main.conArg);
-          // Statement statement = connection.createStatement();
-          // ResultSet resultSet = statement.executeQuery(sql);
-          // String path = resultSet.getString("path");
-          // resultSet.close();
-          // statement.close();
-          // connection.close();
-          // String filerExecutablePath = "C:/Program Files/Honeyview/Honeyview.exe";
-          // String commandString = "\"" + filerExecutablePath + "\" " + path;
-          // // TODO 初期設定の画像ビューワ指定部分ができたら上2行を編集
-          // // cmdに与える引数ではダブルクォートの扱いが特殊なので注意すること
-          // // 参考 https://www.pg-fl.jp/program/dos/doscmd/cmd.htm
-          // String[] command = {"cmd", "/c", commandString};
-          // // String[] command =
-          // // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
-          // runtime.exec(command);
-          // } catch (SQLException | IOException e) {
-          // // TODO 自動生成された catch ブロック
-          // e.printStackTrace();
-          // }
-
         }
       }
     });

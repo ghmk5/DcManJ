@@ -270,6 +270,7 @@ public class ImportDialog extends JDialog {
           openAttrDialog();
         }
       });
+      add(setAttr);
 
       JMenuItem moveLastNoteToOriginal = new JMenuItem("備考の最後の要素を元ネタに移動");
       moveLastNoteToOriginal.addActionListener(new AbstractAction() {
@@ -301,9 +302,26 @@ public class ImportDialog extends JDialog {
           updateTable();
         }
       });
-
-      add(setAttr);
       add(moveLastNoteToOriginal);
+
+      JMenuItem openWithViewer = new JMenuItem("ビューワで開く");
+      openWithViewer.addActionListener(new AbstractAction() {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
+          String fileName;
+          Entry entry;
+          int tableRowIdx = table.getSelectedRows()[0];
+          tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
+          fileName = (String) table.getModel().getValueAt(tableRowIdx,
+              columnModel.getColumnIndex("Current Name"));
+          entry = entryMap.get(fileName);
+          Util.openWithViewer(browserWindow.main.appInfo, entry);
+        }
+      });
+      add(openWithViewer);
+
     }
   }
 
