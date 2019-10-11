@@ -152,5 +152,6 @@ $RECYCLE.BIN/
 # End of https://www.gitignore.io/api/java,macos,windows,eclipse
 
 ### プロジェクト固有エントリ 手動追加分
+lib/
 reference/
 src/com/github/ghmk5/dcmanj/test
