@@ -6,6 +6,8 @@ import java.awt.FlowLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -28,6 +30,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
@@ -60,9 +63,21 @@ public class BrowserWindow extends JFrame {
     JMenuItem mntm = new JMenuItem("New Window");
     mntm.addActionListener(new openNewWindow(this));
     menu.add(mntm);
+    mntm = new JMenuItem("Close Window");
+    mntm.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        dispose();
+      }
+    });
+    mntm.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK));
+    menu.add(mntm);
+    menu.addSeparator();
     mntm = new JMenuItem("add new Entries...");
     mntm.addActionListener(new OpenImptDlgListner(this));
     menu.add(mntm);
+    menu.addSeparator();
     mntm = new JMenuItem("設定");
     mntm.addActionListener(new OpenPrefsDlgListner(this));
     menu.add(mntm);
