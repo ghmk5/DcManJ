@@ -219,27 +219,29 @@ public class BrowserTable extends ExtendedTable {
 
     @Override
     public void show(Component c, int x, int y) {
-      boolean isSelectedSingleRow = (((BrowserTable) c).getSelectedRows().length == 1);
-      try {
-        boolean isAuthorNull =
-            (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getAuthor()));
-        boolean isCircleNull =
-            (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getCircle()));
-        searchMenu.setEnabled(isSelectedSingleRow);
-        searchSameAuthor.setEnabled(isAuthorNull);
-        searchSameAuthorNW.setEnabled(isAuthorNull);
-        searchSameCircle.setEnabled(isCircleNull);
-        searchSameCircleNW.setEnabled(isCircleNull);
-        searchSameTitle.setEnabled(true);
-        searchSameTitleNW.setEnabled(true);
-        copyMenu.setEnabled(isSelectedSingleRow);
-        copyCircle.setEnabled(isCircleNull);
-        copyAuthor.setEnabled(isAuthorNull);
-        openFilerAction.setEnabled(isSelectedSingleRow);
-        super.show(c, x, y);
-      } catch (SQLException e) {
-        // TODO 自動生成された catch ブロック
-        e.printStackTrace();
+      if ((((BrowserTable) c).getSelectedRows().length > 0)) {
+        boolean isSelectedSingleRow = (((BrowserTable) c).getSelectedRows().length == 1);
+        try {
+          boolean isAuthorNull =
+              (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getAuthor()));
+          boolean isCircleNull =
+              (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getCircle()));
+          searchMenu.setEnabled(isSelectedSingleRow);
+          searchSameAuthor.setEnabled(isAuthorNull);
+          searchSameAuthorNW.setEnabled(isAuthorNull);
+          searchSameCircle.setEnabled(isCircleNull);
+          searchSameCircleNW.setEnabled(isCircleNull);
+          searchSameTitle.setEnabled(true);
+          searchSameTitleNW.setEnabled(true);
+          copyMenu.setEnabled(isSelectedSingleRow);
+          copyCircle.setEnabled(isCircleNull);
+          copyAuthor.setEnabled(isAuthorNull);
+          openFilerAction.setEnabled(isSelectedSingleRow);
+          super.show(c, x, y);
+        } catch (SQLException e) {
+          // TODO 自動生成された catch ブロック
+          e.printStackTrace();
+        }
       }
     }
 
