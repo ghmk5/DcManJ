@@ -306,11 +306,14 @@ public class Util {
 
   public static void openWithViewer(AppInfo appInfo, com.github.ghmk5.dcmanj.info.Entry entry) {
     String viewerPath = appInfo.getViewerPath();
+    String entryPath = entry.getPath().toString();
+    if (!(new File(entryPath).exists())) {
+      JOptionPane.showMessageDialog(null, entryPath + " にアクセスできません");
+      return;
+    }
     if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
       try {
         String[] command = {"cmd", "/c", "\"" + viewerPath + "\" " + entry.getPath().toString()};
-        // String[] command =
-        // {"cmd", "/c", "\"C:/Program Files/Honeyview/Honeyview.exe\" " + path};
         Runtime.getRuntime().exec(command);
       } catch (IOException e1) {
         // TODO 自動生成された catch ブロック
