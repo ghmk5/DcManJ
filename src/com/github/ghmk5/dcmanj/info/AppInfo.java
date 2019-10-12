@@ -14,6 +14,12 @@ public class AppInfo {
   HashMap<String, Integer> columnWidthImpt;
   String imptDir;
   String saveDir;
+  Boolean useChildDir;
+  String childDirPrefix;
+  Boolean splitChildDirBySize;
+  Integer childDirSplitSize;
+  Boolean splitChildDirByNumber;
+  Integer childDirSplitNumber;
   String viewerPath;
   String[] evRexExStrings;
   String[] defaultEvRexExStrings = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭",
@@ -138,6 +144,74 @@ public class AppInfo {
 
   public void setNoteRegExStrings(String[] noteRegExStrings) {
     this.noteRegExStrings = noteRegExStrings;
+  }
+
+  public Boolean getUseChildDir() {
+    if (Objects.isNull(useChildDir)) {
+      return true;
+    } else {
+      return useChildDir;
+    }
+  }
+
+  public void setUseChildDir(Boolean useChildDir) {
+    this.useChildDir = useChildDir;
+  }
+
+  public String getChildDirPrefix() {
+    return childDirPrefix;
+  }
+
+  public void setChildDirPrefix(String childDirPrefix) {
+    this.childDirPrefix = childDirPrefix;
+  }
+
+  public Boolean getSplitChildDirBySize() {
+    if (Objects.isNull(splitChildDirBySize)) {
+      return true;
+    } else {
+      return splitChildDirBySize;
+    }
+  }
+
+  public void setSplitChildDirBySize(Boolean splitChildDirBySize) {
+    this.splitChildDirBySize = splitChildDirBySize;
+  }
+
+  public Integer getChildDirSplitSize() {
+    if (Objects.isNull(childDirSplitSize)) {
+      return 22649;
+    } else {
+      return childDirSplitSize;
+    }
+  }
+
+  public void setChildDirSplitSize(Integer childDirSplitSize) {
+    this.childDirSplitSize = childDirSplitSize;
+  }
+
+  public Boolean getSplitChildDirByNumber() {
+    if (Objects.isNull(splitChildDirByNumber)) {
+      return false;
+    } else {
+      return splitChildDirByNumber;
+    }
+  }
+
+  public void setSplitChildDirByNumber(Boolean splitChildDirByNumber) {
+    this.splitChildDirByNumber = splitChildDirByNumber;
+  }
+
+  public Integer getChildDirSplitNumber() {
+    if (Objects.isNull(childDirSplitNumber)) {
+      return 128;
+    } else {
+      return childDirSplitNumber;
+    }
+  }
+
+  public void setChildDirSplitNumber(Integer childDirSplitNumber) {
+    this.childDirSplitNumber = childDirSplitNumber;
   }
 
 
