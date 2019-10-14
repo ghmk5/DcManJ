@@ -313,7 +313,9 @@ public class Util {
     }
     if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
       try {
-        String[] command = {"cmd", "/c", "\"" + viewerPath + "\" " + entry.getPath().toString()};
+        entryPath = entryPath.replaceAll("\\^", "^^").replaceAll("&", "^&").replaceAll("%", "^%")
+            .replaceAll("\\(", "^(").replaceAll("\\)", "^)");
+        String[] command = {"cmd", "/c", "\"" + viewerPath + "\" " + entryPath};
         Runtime.getRuntime().exec(command);
       } catch (IOException e1) {
         // TODO 自動生成された catch ブロック
