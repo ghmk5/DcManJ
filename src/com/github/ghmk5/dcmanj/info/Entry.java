@@ -209,6 +209,7 @@ public class Entry {
           zipFile.stream().filter(x -> !x.isDirectory()).forEach(e -> {
             pages++;
           });
+          zipFile.close();
         } catch (Exception e) {
           JOptionPane.showMessageDialog(null,
               "zipファイル " + file.getName() + " の内容を読み取れません(暗号化ファイル?)");
@@ -577,6 +578,40 @@ public class Entry {
     }
     String outString = String.join(" ", list.toArray(new String[list.size()]));
     return outString;
+  }
+
+  /**
+   * インポートに必要な情報が揃っているか否かを示す真偽値を返す
+   *
+   * @return
+   */
+  public boolean isReady() {
+    boolean result;
+    if (Objects.isNull(type)) {
+      result = false;
+    } else if (Objects.isNull(title) || title.equals("")) {
+      result = false;
+    } else {
+      result = true;
+      switch (type) {
+        case "doujinshi":
+          if (Objects.isNull(circle)) {
+            result = false;
+          }
+          break;
+        case "comic":
+          if (Objects.isNull(author)) {
+            result = false;
+          }
+          break;
+        case "magazine":
+          if (Objects.isNull(volume) && Objects.isNull(issue)) {
+            result = false;
+          }
+          break;
+      }
+    }
+    return result;
   }
 
   public Integer getId() {
