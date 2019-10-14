@@ -16,19 +16,16 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
-import javax.swing.Box;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
@@ -71,16 +68,19 @@ public class ImportDialog extends JDialog {
     JButton changeDirButton = new JButton("Change Dir");
     changeDirButton.addActionListener(new ChangeDirAction(this));
     panel.add(changeDirButton);
-    Box box = Box.createHorizontalBox();
-    ButtonGroup storeFormBG = new ButtonGroup();
-    JRadioButton zipRB = new JRadioButton("zipして保管");
-    box.add(zipRB);
-    storeFormBG.add(zipRB);
-    JRadioButton bareRB = new JRadioButton("フォルダのまま保管");
-    box.add(bareRB);
-    box.setBorder(new TitledBorder("元がディレクトリの場合"));
-    storeFormBG.add(bareRB);
-    panel.add(box);
+
+    JCheckBox checkBox = new JCheckBox("ディレクトリはzipして保管");
+    checkBox.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        browserWindow.main.appInfo.setZipToStore(((JCheckBox) e.getSource()).isSelected());
+        Util.writeBean(browserWindow.main.prefFile, browserWindow.main.appInfo);
+      }
+    });
+    checkBox.setSelected(browserWindow.main.appInfo.getZipToStore());
+    panel.add(checkBox);
+
     table = new ExtendedTable();
     table.getTableHeader().setFont(browserWindow.main.tableFont);
     table.setFont(browserWindow.main.tableFont);
@@ -118,6 +118,7 @@ public class ImportDialog extends JDialog {
       public void actionPerformed(ActionEvent e) {
         ImportDialog dialog = (ImportDialog) SwingUtilities.getAncestorOfClass(ImportDialog.class,
             (JButton) e.getSource());
+
         dialog.dispose();
 
       }
