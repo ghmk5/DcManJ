@@ -20,6 +20,7 @@ public class AppInfo {
   Integer childDirSplitSize;
   Boolean splitChildDirByNumber;
   Integer childDirSplitNumber;
+  Boolean zipToStore;
   String viewerPath;
   String[] evRexExStrings;
   String[] defaultEvRexExStrings = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭",
@@ -212,6 +213,18 @@ public class AppInfo {
 
   public void setChildDirSplitNumber(Integer childDirSplitNumber) {
     this.childDirSplitNumber = childDirSplitNumber;
+  }
+
+  public Boolean getZipToStore() {
+    if (Objects.isNull(zipToStore)) {
+      return true;
+    } else {
+      return zipToStore;
+    }
+  }
+
+  public void setZipToStore(Boolean zipToStore) {
+    this.zipToStore = zipToStore;
   }
 
 
