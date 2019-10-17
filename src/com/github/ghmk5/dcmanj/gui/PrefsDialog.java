@@ -224,7 +224,7 @@ public class PrefsDialog extends JDialog {
     splitByNumberField.setEditable(appInfo.getSplitChildDirByNumber());
     splitByNumberField.setText(String.valueOf(appInfo.getChildDirSplitNumber()));
     viewerPathField.setText(appInfo.getViewerPath());
-    evRegExField.setText(String.join(",", appInfo.getEvRexExStrings()));
+    evRegExField.setText(String.join(",", appInfo.getEvRegExStrings()));
     noteRegExField.setText(String.join(",", appInfo.getNoteRegExStrings()));
   }
 
