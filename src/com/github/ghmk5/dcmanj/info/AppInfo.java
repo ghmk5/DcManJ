@@ -22,8 +22,8 @@ public class AppInfo {
   Integer childDirSplitNumber;
   Boolean zipToStore;
   String viewerPath;
-  String[] evRexExStrings;
-  String[] defaultEvRexExStrings = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭",
+  String[] evRegExStrings;
+  String[] defaultEvRegExStrings = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭",
       "神戸かわさき", "砲雷", "夜戦に突入す", "もう何も恐くない", "みみけっと", "ふたけっと", "ぱんっあ☆ふぉー", "とら祭り", "こみトレ",
       "^SC\\d{2}", "Cレヴォ", "C[Oo][Mm][Ii][Cc]1☆"};
   String[] noteRegExStrings;
@@ -123,16 +123,16 @@ public class AppInfo {
     this.viewerPath = viewerPath;
   }
 
-  public String[] getEvRexExStrings() {
-    if (Objects.nonNull(evRexExStrings)) {
-      return evRexExStrings;
+  public String[] getEvRegExStrings() {
+    if (Objects.nonNull(evRegExStrings)) {
+      return evRegExStrings;
     } else {
-      return defaultEvRexExStrings;
+      return defaultEvRegExStrings;
     }
   }
 
-  public void setEvRexExStrings(String[] evRexExStrings) {
-    this.evRexExStrings = evRexExStrings;
+  public void setEvRegExStrings(String[] evRexExStrings) {
+    this.evRegExStrings = evRexExStrings;
   }
 
   public String[] getNoteRegExStrings() {
