@@ -21,7 +21,7 @@ public class DcManJ {
   public File prefFile;
   public AppInfo appInfo;
   public ArrayList<BrowserWindow> listBrowserWindows;
-  File dbFile;
+  public File dbFile;
   // public Connection sqlConnection;
   // public Statement statement = null;
   public String conArg;
