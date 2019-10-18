@@ -8,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -161,19 +160,8 @@ public class BrowserTable extends ExtendedTable {
         @Override
         public void actionPerformed(ActionEvent e) {
           try {
-            Path entryPath = browserTable.getEntries().get(0).getPath();
-
-            // TODO この部分 環境判定で分岐
-            // explorer.exeに渡すオプションについては https://smdn.jp/programming/tips/explorer_options/ を参照
-            String filerCommandString = "%windir%\\explorer ";
-            filerCommandString += "/select,";
-            filerCommandString += entryPath.toString();
-
-            String[] command = {"cmd", "/c", filerCommandString};
-            Runtime runtime = Runtime.getRuntime();
-            runtime.exec(command);
-
-          } catch (SQLException | IOException e1) {
+            Util.showInFiler(browserTable.getEntries().get(0).getPath().toFile());
+          } catch (IOException | SQLException e1) {
             // TODO 自動生成された catch ブロック
             e1.printStackTrace();
           }
