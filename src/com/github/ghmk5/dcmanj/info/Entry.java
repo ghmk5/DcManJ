@@ -334,7 +334,7 @@ public class Entry {
     ArrayList<String> elementsToRemove = new ArrayList<String>();
     if (Objects.nonNull(prePositions)) {
       for (String prePosition : prePositionsList) {
-        for (String evRegex : appInfo.getEvRexExStrings()) {
+        for (String evRegex : appInfo.getEvRegExStrings()) {
           Pattern pattern = Pattern.compile(evRegex);
           Matcher matcher = pattern.matcher(prePosition);
           if (matcher.find()) {
@@ -525,7 +525,12 @@ public class Entry {
       }
     }
 
-    return sb.toString();
+    // ファイル名に使えない文字を全角に置換
+    String filename = sb.toString().replaceAll("\\\\", "＼").replaceAll("/", "／")
+        .replaceAll(":", "：").replaceAll("\\?", "？").replaceAll("\"", "”").replaceAll("<", "＜")
+        .replaceAll(">", "＞").replaceAll("\\|", "｜");
+
+    return filename;
   }
 
   /**
