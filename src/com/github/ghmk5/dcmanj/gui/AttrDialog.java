@@ -8,7 +8,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -35,7 +34,6 @@ public class AttrDialog extends JDialog {
   ArrayList<Entry> entryList;
   Entry entry;
   AppInfo appInfo;
-  File prefFile;
   String[] types = {"", "comic", "comic_s", "doujinshi", "magazine", "novel"};
   // Path dirToSave = Path.of("D:\\mag\\store"); // 保存先パス 最終的には環境設定で指定できるようにする
 
@@ -63,10 +61,8 @@ public class AttrDialog extends JDialog {
 
     if (owner instanceof ImportDialog) {
       appInfo = ((ImportDialog) owner).browserWindow.main.appInfo;
-      prefFile = ((ImportDialog) owner).browserWindow.main.prefFile;
     } else if (owner instanceof BrowserWindow) {
       appInfo = ((BrowserWindow) owner).main.appInfo;
-      prefFile = ((BrowserWindow) owner).main.prefFile;
     } else {
       throw new IllegalArgumentException("AttrDialogに想定されていない親ウィンドウが指定された");
     }
@@ -353,7 +349,7 @@ public class AttrDialog extends JDialog {
     private void saveInfo(Window window) {
       try {
         appInfo.setRectAttr(window.getBounds());
-        Util.writeBean(prefFile, appInfo);
+        Util.writeAppInfo(appInfo);
       } catch (Exception e) {
         throw e;
       }

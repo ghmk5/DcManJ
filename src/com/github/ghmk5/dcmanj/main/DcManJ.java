@@ -81,20 +81,17 @@ public class DcManJ {
       appInfo = (AppInfo) Util.readBean(prefFile);
     } else {
       appInfo = new AppInfo();
-      Util.writeBean(prefFile, appInfo);
+      appInfo.setPrefFilePath(appInfo.getPrefFilePath());
+      Util.writeAppInfo(appInfo);
     }
 
     // データベースファイルの検索 なければjar内リソースからコピーしてくる
-    // 接続してstatementを用意する
-    String dbFileName = "DcManJ.db";
-    dbFile = new File(parentPath.toFile(), dbFileName);
+    dbFile = new File(appInfo.getDbFilePath());
     if (!dbFile.exists()) {
       InputStream inputStream = DcManJ.class.getResourceAsStream("/data/DcManJ.db");
       Files.copy(inputStream, dbFile.toPath());
     }
     conArg = "jdbc:sqlite:" + dbFile.toPath();
-    // sqlConnection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.toPath());
-    // statement = sqlConnection.createStatement();
 
     // テーブルの表示に使うフォントを生成
     try {

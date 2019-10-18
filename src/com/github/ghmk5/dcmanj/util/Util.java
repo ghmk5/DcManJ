@@ -259,6 +259,16 @@ public class Util {
   }
 
   /**
+   * AppInfoをファイルに記録する
+   * 
+   * @param appInfo
+   */
+  public static void writeAppInfo(AppInfo appInfo) {
+    File beanFile = new File(appInfo.getPrefFilePath());
+    writeBean(beanFile, appInfo);
+  }
+
+  /**
    * Windowの位置とサイズを変更する -- 画面からはみ出す場合は調整される
    *
    * @param window

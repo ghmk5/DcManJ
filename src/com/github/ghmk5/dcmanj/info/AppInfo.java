@@ -1,11 +1,18 @@
 package com.github.ghmk5.dcmanj.info;
 
 import java.awt.Rectangle;
+import java.io.File;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Objects;
+import javax.swing.JOptionPane;
+import com.github.ghmk5.dcmanj.util.Util;
 
 public class AppInfo {
 
+  String parentPath;
+  String prefFilePath;
+  String dbFilePath;
   Rectangle rectMain;
   Rectangle rectPref;
   Rectangle rectImpt;
@@ -45,6 +52,57 @@ public class AppInfo {
     this.rectImpt = (Rectangle) archRectangle.clone();
     this.rectAttr = (Rectangle) archRectangle.clone();
 
+  }
+
+  public String getParentPath() {
+    if (Objects.isNull(parentPath)) {
+      try {
+        if (Util.getApplicationPath(this.getClass()).toFile().isFile()) {
+          parentPath = Util.getApplicationPath(this.getClass()).getParent().toString();
+        } else {
+          parentPath = Util.getApplicationPath(this.getClass()).toString();
+        }
+        return parentPath;
+      } catch (URISyntaxException e) {
+        JOptionPane.showMessageDialog(null, "実行ファイルのパスが決定できません\nプログラムを終了します", "致命的なエラー",
+            JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+        System.exit(0);
+        return null;
+      }
+    } else {
+      return parentPath;
+    }
+  }
+
+  public void setParentPath(String parentPath) {
+    this.parentPath = parentPath;
+  }
+
+  public String getPrefFilePath() {
+    if (Objects.isNull(prefFilePath)) {
+      File prefFile = new File(getParentPath(), "DcManJPrefs.xml");
+      return prefFile.getAbsolutePath().toString();
+    } else {
+      return prefFilePath;
+    }
+  }
+
+  public void setPrefFilePath(String prefFilePath) {
+    this.prefFilePath = prefFilePath;
+  }
+
+  public String getDbFilePath() {
+    if (Objects.isNull(dbFilePath)) {
+      File dbFile = new File(getParentPath(), "DcManJ.db");
+      return dbFile.getAbsolutePath().toString();
+    } else {
+      return dbFilePath;
+    }
+  }
+
+  public void setDbFilePath(String dbFilePath) {
+    this.dbFilePath = dbFilePath;
   }
 
   public Rectangle getRectMain() {

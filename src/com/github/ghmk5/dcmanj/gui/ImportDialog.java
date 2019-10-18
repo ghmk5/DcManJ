@@ -49,6 +49,7 @@ import com.github.ghmk5.dcmanj.util.Util;
 
 public class ImportDialog extends JDialog {
   BrowserWindow browserWindow;
+  AppInfo appInfo;
   ExtendedTable table;
   String dirPath;
   HashMap<String, Entry> entryMap;
@@ -57,7 +58,8 @@ public class ImportDialog extends JDialog {
   public ImportDialog(BrowserWindow browserWindow)
       throws IllegalArgumentException, ZipException, IOException {
     this.browserWindow = browserWindow;
-    this.dirPath = browserWindow.main.appInfo.getImptDir();
+    this.appInfo = browserWindow.main.appInfo;
+    this.dirPath = appInfo.getImptDir();
 
     setTitle("新規エントリ追加");
     setLayout(new BorderLayout());
@@ -90,11 +92,11 @@ public class ImportDialog extends JDialog {
 
       @Override
       public void actionPerformed(ActionEvent e) {
-        browserWindow.main.appInfo.setZipToStore(((JCheckBox) e.getSource()).isSelected());
-        Util.writeBean(browserWindow.main.prefFile, browserWindow.main.appInfo);
+        appInfo.setZipToStore(((JCheckBox) e.getSource()).isSelected());
+        Util.writeAppInfo(appInfo);
       }
     });
-    checkBox.setSelected(browserWindow.main.appInfo.getZipToStore());
+    checkBox.setSelected(appInfo.getZipToStore());
     panel.add(checkBox);
 
     table = new ExtendedTable();
@@ -160,7 +162,7 @@ public class ImportDialog extends JDialog {
         outAry[0] = "unknown (simlink?)";
       }
       outAry[1] = file.getName();
-      entry = new Entry(file, browserWindow.main.appInfo);
+      entry = new Entry(file, appInfo);
       entryMap.put(outAry[1], entry);
       outAry[2] = entry.generateNameToSave();
       dataList.add(outAry);
@@ -172,7 +174,7 @@ public class ImportDialog extends JDialog {
     model.setColumnIdentifiers(columnNames);
     table.setModel(model);
     try {
-      HashMap<String, Integer> columnWidthMap = browserWindow.main.appInfo.getColumnWidthImpt();
+      HashMap<String, Integer> columnWidthMap = appInfo.getColumnWidthImpt();
       if (Objects.nonNull(columnWidthMap)) {
         table.setColumnWidth(columnWidthMap);
       }
@@ -188,7 +190,7 @@ public class ImportDialog extends JDialog {
       entryList.add(entryMap.get((String) currentFileName));
     }
     AttrDialog attrDialog = new AttrDialog(this, entryList);
-    Util.setRect(attrDialog, browserWindow.main.appInfo.getRectAttr());
+    Util.setRect(attrDialog, appInfo.getRectAttr());
     attrDialog.setModal(true);
     attrDialog.setVisible(true);
     updateTable();
@@ -470,9 +472,8 @@ public class ImportDialog extends JDialog {
       int selected = fileChooser.showOpenDialog(importDialog);
       if (selected == JFileChooser.APPROVE_OPTION) {
         importDialog.dirPath = fileChooser.getSelectedFile().toString();
-        importDialog.browserWindow.main.appInfo.setImptDir(dirPath);
-        Util.writeBean(importDialog.browserWindow.main.prefFile,
-            importDialog.browserWindow.main.appInfo);
+        importDialog.appInfo.setImptDir(dirPath);
+        Util.writeAppInfo(importDialog.appInfo);
         try {
           readEntries();
         } catch (IOException e1) {
@@ -498,10 +499,10 @@ public class ImportDialog extends JDialog {
 
     private void saveInfo() {
       try {
-        browserWindow.main.appInfo.setRectImpt(getBounds());
+        appInfo.setRectImpt(getBounds());
         HashMap<String, Integer> columnWidthMap = table.getColumnWidth();
-        browserWindow.main.appInfo.setColumnWidthImpt(columnWidthMap);
-        Util.writeBean(browserWindow.main.prefFile, browserWindow.main.appInfo);
+        appInfo.setColumnWidthImpt(columnWidthMap);
+        Util.writeAppInfo(appInfo);
       } catch (Exception e) {
         throw e;
       }
@@ -568,7 +569,7 @@ public class ImportDialog extends JDialog {
         @Override
         public void actionPerformed(ActionEvent e) {
           Entry entry = getSelectedEntries().get(0);
-          Util.openWithViewer(browserWindow.main.appInfo, entry);
+          Util.openWithViewer(appInfo, entry);
         }
       });
       add(openWithViewer);
@@ -598,7 +599,7 @@ public class ImportDialog extends JDialog {
         @Override
         public void actionPerformed(ActionEvent e) {
           try {
-            importEntry(getSelectedEntries(), browserWindow.main.appInfo);
+            importEntry(getSelectedEntries(), appInfo);
           } catch (IOException | SQLException | InterruptedException | ExecutionException e1) {
             // TODO 自動生成された catch ブロック
             e1.printStackTrace();

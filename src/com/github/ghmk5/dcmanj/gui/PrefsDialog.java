@@ -282,7 +282,7 @@ public class PrefsDialog extends JDialog {
     private void saveInfo(Window window) {
       try {
         appInfo.setRectPref(window.getBounds());
-        Util.writeBean(owner.main.prefFile, appInfo);
+        Util.writeAppInfo(appInfo);
       } catch (Exception e) {
         throw e;
       }

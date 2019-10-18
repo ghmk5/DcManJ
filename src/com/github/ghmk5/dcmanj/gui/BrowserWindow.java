@@ -267,7 +267,7 @@ public class BrowserWindow extends JFrame {
           main.appInfo.setRectMain(window.getBounds());
           HashMap<String, Integer> columnWidthMap = table.getColumnWidth();
           main.appInfo.setColumnWidthMain(columnWidthMap);
-          Util.writeBean(main.prefFile, main.appInfo);
+          Util.writeAppInfo(main.appInfo);
           ((BrowserWindow) window).setDefaultCloseOperation(EXIT_ON_CLOSE);
         }
       } catch (Exception e) {
