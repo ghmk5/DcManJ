@@ -320,10 +320,11 @@ public class ImportDialog extends JDialog {
    * @throws SQLException
    */
   public static void putNewRecord(Entry entry, File dbFile) throws SQLException {
-    Object[] values = {entry.getType(), entry.getAdult(), entry.getCircle(), entry.getAuthor(),
-        entry.getTitle(), entry.getSubtitle(), entry.getVolume(), entry.getIssue(), entry.getNote(),
-        entry.getPages(), entry.getSize(), entry.getPath().toString(),
-        entry.getDate().format(Util.DTF), entry.getOriginal(), entry.getRelease()};
+    Object[] values =
+        {entry.getType(), String.valueOf(entry.getAdult()), entry.getCircle(), entry.getAuthor(),
+            entry.getTitle(), entry.getSubtitle(), entry.getVolume(), entry.getIssue(),
+            entry.getNote(), entry.getPages(), entry.getSize(), entry.getPath().toString(),
+            entry.getDate().format(Util.DTF), entry.getOriginal(), entry.getRelease()};
     String[] valueStrings = new String[values.length];
     for (int i = 0; i < values.length; i++) {
       if (values[i] instanceof String) {
