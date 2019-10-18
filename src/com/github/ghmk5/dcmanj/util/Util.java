@@ -27,12 +27,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.InputMap;
@@ -40,6 +44,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
+import org.apache.commons.io.FileUtils;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 
 public class Util {
@@ -304,6 +309,12 @@ public class Util {
     return result;
   }
 
+  /**
+   * 所与のEntryを登録されたビューワで開く
+   *
+   * @param appInfo
+   * @param entry
+   */
   public static void openWithViewer(AppInfo appInfo, com.github.ghmk5.dcmanj.info.Entry entry) {
     String viewerPath = appInfo.getViewerPath();
     String entryPath = entry.getPath().toString();
@@ -312,10 +323,11 @@ public class Util {
       return;
     }
     if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
+      if (!entryPath.contains(" ")) {
+        entryPath = escapeForCMD(entryPath);
+      }
       try {
-        entryPath = entryPath.replaceAll("\\^", "^^").replaceAll("&", "^&").replaceAll("%", "^%")
-            .replaceAll("\\(", "^(").replaceAll("\\)", "^)");
-        String[] command = {"cmd", "/c", "\"" + viewerPath + "\" " + entryPath};
+        String[] command = {"cmd", "/c", "\"" + viewerPath, entryPath + "\""};
         Runtime.getRuntime().exec(command);
       } catch (IOException e1) {
         // TODO 自動生成された catch ブロック
@@ -324,6 +336,181 @@ public class Util {
     } else {
       JOptionPane.showMessageDialog(null, "ビューワアプリケーションが設定されていません");
     }
+  }
+
+  /**
+   * 保存先ディレクトリを決定して(必要なら作成した上で)返す<BR>
+   * <BR>
+   * AppInfoを参照してディレクトリ分割方法を決定し、現行保存先に既に保存されているエントリ数および容量と照らし合わせ、<BR>
+   * 新規ディレクトリの作成が不要であれば現行保存先を、必要なら新しいディレクトリを作成して返す
+   *
+   * @param appInfo 分割条件やディレクトリ名接頭辞を読み出す
+   * @param srcFile 保存するファイルまたはディレクトリ
+   * @return 保存先ディレクトリのFileインスタンス
+   */
+  public static File prepSaveDir(AppInfo appInfo, File srcFile) {
+
+    File parentDir = new File(appInfo.getSaveDir());
+    String saveDirPrefix = appInfo.getChildDirPrefix();
+    File saveDir = getDirToSave(parentDir, saveDirPrefix);
+
+    long dirSizeLimit = appInfo.getChildDirSplitSize();
+    dirSizeLimit = dirSizeLimit * 1024 * 1024;
+    if (appInfo.getSplitChildDirBySize()) {
+      long dirSize = FileUtils.sizeOfDirectory(saveDir);
+      long sizeToMove;
+      if (srcFile.isFile()) {
+        sizeToMove = srcFile.length();
+      } else {
+        sizeToMove = FileUtils.sizeOfDirectory(srcFile);
+      }
+      if ((sizeToMove + dirSize) > dirSizeLimit) {
+        saveDir = getNewSaveDir(saveDir);
+      }
+    } else {
+      int numberSaved = saveDir.listFiles().length;
+      if ((numberSaved + 1) > appInfo.getChildDirSplitNumber()) {
+        saveDir = getNewSaveDir(saveDir);
+      }
+    }
+
+    return saveDir;
+  }
+
+  /**
+   * 指定の親ディレクトリ直下にある指定の接頭辞を持つ連番ディレクトリのうち最新のものを返す<BR>
+   * 連番は10進数4桁<BR>
+   * 存在しない場合は(親ディレクトリとも)作成する<BR>
+   *
+   * @param parentDir 親ディレクトリ
+   * @param saveDirPrefix 子ディレクトリ接頭辞 空文字列やnullも可
+   * @return 子ディレクトリのFileインスタンス
+   */
+  public static File getDirToSave(File parentDir, String saveDirPrefix) {
+
+    if (!parentDir.exists()) {
+      int answer =
+          JOptionPane.showConfirmDialog(null, "指定の保存先 " + parentDir.toString() + " は存在しません。作成しますか？",
+              "保存ディレクトリ作成の確認", JOptionPane.OK_CANCEL_OPTION);
+      if (answer == JOptionPane.OK_OPTION) {
+        if (!parentDir.mkdirs()) {
+          JOptionPane.showMessageDialog(null, parentDir.toString() + " を作成できません。処理を中止します");
+          return null;
+        }
+      } else {
+        JOptionPane.showMessageDialog(null, "処理を中止します");
+        return null;
+      }
+    }
+
+    if (Objects.isNull(saveDirPrefix)) {
+      saveDirPrefix = "";
+    }
+    File dirToSave;
+    Integer childDirIdx = null;
+    ArrayList<File> childDirList = new ArrayList<File>();
+    Comparator<File> fileComparator = Comparator.comparing(File::getName).reversed();
+    for (File file : parentDir.listFiles()) {
+      if (file.getName().matches("^" + saveDirPrefix + "\\d{4}$")) {
+        childDirList.add(file);
+      }
+    }
+    childDirList =
+        (ArrayList<File>) childDirList.stream().sorted(fileComparator).collect(Collectors.toList());
+    if (childDirList.size() > 0) {
+      Pattern pattern = Pattern.compile("^" + (saveDirPrefix) + "(\\d{4})$");
+      Matcher matcher = pattern.matcher(childDirList.get(0).getName());
+      if (matcher.find()) {
+        childDirIdx = Integer.valueOf(matcher.group(1));
+      }
+    } else {
+      childDirIdx = 1;
+    }
+    dirToSave = new File(parentDir, saveDirPrefix + String.format("%04d", childDirIdx));
+    if (!dirToSave.exists()) {
+      dirToSave.mkdir();
+    }
+    return dirToSave;
+  }
+
+  /**
+   * 現行の保存ディレクトリと同じ階層にあたらしい保存ディレクトリを作って返す<BR>
+   * 既に同名のディレクトリが存在する場合は新規作成はせず、既存のディレクトリをそのまま使用する
+   *
+   * @param currentSaveDir 現行の保存ディレクトリ
+   * @return 新しい保存ディレクトリ
+   * @throws IllegalArgumentException
+   */
+  public static File getNewSaveDir(File currentSaveDir) throws IllegalArgumentException {
+    String currentDirName = currentSaveDir.getName();
+    Pattern pattern = Pattern.compile("(\\d{4}$)");
+    Matcher matcher = pattern.matcher(currentDirName);
+    String prefix = null;
+    Integer idx = null;
+    if (matcher.find()) {
+      idx = Integer.valueOf(matcher.group(1));
+      prefix = currentDirName.replaceFirst("(\\d{4}$)", "");
+    } else {
+      throw new IllegalArgumentException(
+          "メソッド getNewSaveDir に想定外の名 " + currentDirName + " を持つ File が渡された");
+    }
+    idx++;
+    String newDirName = prefix + String.format("%04d", idx);
+    File newSaveDir = new File(currentSaveDir.getParent(), newDirName);
+    if (!newSaveDir.exists()) {
+      newSaveDir.mkdir();
+    }
+    return newSaveDir;
+  }
+
+  /**
+   * Windowsのcmd.exeに引数として渡すために特殊文字をエスケープして返す<BR>
+   * エスケープされる特殊文字は & ( ) % ^<BR>
+   * explorer.exeの引数に使う場合、このメソッドの戻り値を"^\""でくくる必要がある<BR>
+   * (パス中の"="に対応するため)
+   *
+   * @param pathString File.getPath().toString()などして取得したパス文字列
+   * @return cmd.exeで使用される特殊文字を"^"でエスケープした文字列
+   */
+  public static String escapeForCMD(String pathString) {
+    return pathString.replaceAll("\\^", "^^").replaceAll("&", "^&").replaceAll("%", "^%")
+        .replaceAll("\\(", "^(").replaceAll("\\)", "^)");
+  }
+
+  /**
+   * 所与のFileをOS標準のファイラ上に表示する<BR>
+   * Fileがディレクトリの場合はその内部を、ファイルであれば親ディレクトリを開く
+   *
+   * @param file
+   * @throws IOException
+   */
+  public static void showInFiler(File file) throws IOException {
+    String osName = System.getProperty("os.name").toLowerCase();
+    ArrayList<String> commandList = new ArrayList<String>();
+    if (osName.startsWith("windows")) {
+      commandList.add("cmd");
+      commandList.add("/c");
+      StringBuilder argBuilder = new StringBuilder("%windir%\\explorer ");
+      if (file.isFile()) {
+        argBuilder.append("/select,");
+      }
+      argBuilder.append("^\"" + escapeForCMD(file.getPath().toString()) + "^\"");
+      commandList.add(argBuilder.toString());
+    } else if (osName.startsWith("mac")) {
+      commandList.add("open");
+      if (file.isDirectory()) {
+        commandList.add(file.getPath().toString());
+      } else {
+        commandList.add(file.getParentFile().getPath().toString());
+      }
+    } else {
+      JOptionPane.showMessageDialog(null,
+          "使用中のOSに対応したコマンドが登録されていません(クラス:Util, メソッド:showInFiler(File file))", "エラー",
+          JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+    Runtime runtime = Runtime.getRuntime();
+    runtime.exec(commandList.toArray(new String[commandList.size()]));
   }
 
 }
