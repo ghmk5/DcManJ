@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -37,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
+import javax.swing.RowSorter.SortKey;
 import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -52,6 +52,7 @@ public class ImportDialog extends JDialog {
   AppInfo appInfo;
   ExtendedTable table;
   String dirPath;
+  File imptDir;
   HashMap<String, Entry> entryMap;
   ProgressMonitor progressMonitor;
 
@@ -60,8 +61,20 @@ public class ImportDialog extends JDialog {
     this.browserWindow = browserWindow;
     this.appInfo = browserWindow.main.appInfo;
     this.dirPath = appInfo.getImptDir();
+    this.imptDir = new File(dirPath);
+    if (!imptDir.exists() || !imptDir.isDirectory() || !imptDir.canRead()) {
+      imptDir = chooseImptDir();
+      if (Objects.isNull(imptDir) || !imptDir.exists() || !imptDir.isDirectory()
+          || !imptDir.canRead()) {
+        dispose();
+      } else {
+        dirPath = imptDir.getAbsolutePath().toString();
+        appInfo.setImptDir(dirPath);
+        Util.writeAppInfo(appInfo);
+      }
+    }
 
-    setTitle("新規エントリ追加");
+    setTitle(dirPath + " から新規エントリを読み込み");
     setLayout(new BorderLayout());
     JPanel panel = new JPanel(new FlowLayout());
     getContentPane().add(panel, BorderLayout.NORTH);
@@ -70,21 +83,13 @@ public class ImportDialog extends JDialog {
 
       @Override
       public void actionPerformed(ActionEvent e) {
-        try {
-          readEntries();
-        } catch (ZipException e1) {
-          // TODO 自動生成された catch ブロック
-          e1.printStackTrace();
-        } catch (IOException e1) {
-          // TODO 自動生成された catch ブロック
-          e1.printStackTrace();
-        }
-
+        readEntries();
+        updateTable();
       }
     });
     panel.add(reloadButton);
     JButton changeDirButton = new JButton("Change Dir");
-    changeDirButton.addActionListener(new ChangeDirAction(this));
+    changeDirButton.addActionListener(new ChangeDirAction());
     panel.add(changeDirButton);
 
     JCheckBox checkBox = new JCheckBox("ディレクトリはzipして保管");
@@ -109,6 +114,7 @@ public class ImportDialog extends JDialog {
         }
       }
     });
+
     // コンテキストメニュー
     TableContextMenu contextMenu = new TableContextMenu();
     table.setComponentPopupMenu(contextMenu);
@@ -132,42 +138,80 @@ public class ImportDialog extends JDialog {
 
     addWindowListener(new ImportDialogListner());
     Util.mapESCtoCancel(this);
+
     readEntries();
+    updateTable();
 
   }
 
-  private void readEntries() throws ZipException, IOException {
-    if (Objects.isNull(dirPath)) {
-      setTitle(null);
-      return;
+  private File chooseImptDir() {
+    JFileChooser fileChooser = new JFileChooser();
+    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+    fileChooser.setApproveButtonText("選択");
+    int selected = fileChooser.showOpenDialog(this);
+    if (selected == JFileChooser.APPROVE_OPTION) {
+      return fileChooser.getSelectedFile();
+    } else {
+      return null;
     }
-    setTitle(dirPath + " から新しいエントリをインポート");
-    File impDir = new File(dirPath);
-    if (!impDir.isDirectory()) {
-      String errString = "ImportDialogクラスのコンストラクタに非ディレクトリなPathが渡された";
-      JOptionPane.showMessageDialog(browserWindow, errString, "エラー", JOptionPane.ERROR_MESSAGE);
-      throw new IllegalArgumentException(errString);
-    }
+  }
+
+  // imptDirの内容を読み込んでentryMapを生成
+  private void readEntries() {
     entryMap = new HashMap<String, Entry>();
-    ArrayList<String[]> dataList = new ArrayList<String[]>();
-    String[] outAry;
+    String fileName;
     Entry entry;
-    for (File file : impDir.listFiles()) {
-      outAry = new String[3];
-      if (file.isFile()) {
-        outAry[0] = "file";
-      } else if (file.isDirectory()) {
-        outAry[0] = "directory";
-      } else {
-        outAry[0] = "unknown (simlink?)";
+    ArrayList<String> fileNamesCouldntRead = new ArrayList<String>();
+    for (File srcFile : imptDir.listFiles()) {
+      fileName = srcFile.getName();
+      try {
+        entry = new Entry(srcFile, appInfo);
+        entryMap.put(fileName, entry);
+      } catch (IOException e) {
+        fileNamesCouldntRead.add(fileName);
       }
-      outAry[1] = file.getName();
-      entry = new Entry(file, appInfo);
-      entryMap.put(outAry[1], entry);
-      outAry[2] = entry.generateNameToSave();
-      dataList.add(outAry);
+    }
+    if (fileNamesCouldntRead.size() > 0) {
+      JOptionPane.showMessageDialog(null,
+          "以下のファイルは読み込めなかったのでスキップされました\n  " + String.join("\n  ",
+              fileNamesCouldntRead.toArray(new String[fileNamesCouldntRead.size()])),
+          "読み込みエラー", JOptionPane.WARNING_MESSAGE);
+    }
+  }
+
+  // entryMapの内容をテーブルに挿入
+  private void updateTable() {
+    // ソート順を保存しておく (テーブル内容を書き換えた後で再適用する)
+    List<? extends SortKey> sortKeys = null;
+    if (Objects.nonNull(table.getRowSorter())) {
+      sortKeys = table.getRowSorter().getSortKeys();
     }
 
+    // 全ての行を消去
+    ((DefaultTableModel) table.getModel()).setRowCount(0);
+
+    // entryListの内容からデータを生成
+    Entry entry;
+    File srcFile;
+    ArrayList<String[]> dataList = new ArrayList<String[]>();
+    String[] rowData;
+    for (String fileName : entryMap.keySet()) {
+      entry = entryMap.get(fileName);
+      srcFile = entry.getPath().toFile();
+      rowData = new String[3];
+      if (srcFile.isFile()) {
+        rowData[0] = "file";
+      } else if (srcFile.isDirectory()) {
+        rowData[0] = "directory";
+      } else {
+        rowData[0] = "unknown (simlink?)";
+      }
+      rowData[1] = srcFile.getName();
+      rowData[2] = entry.generateNameToSave();
+      dataList.add(rowData);
+    }
+
+    // データモデルを生成し、テーブルに適用
     String[] columnNames = {"type", "Current Name", "Name to Store"};
     String[][] data = dataList.toArray(new String[3][dataList.size()]);
     DefaultTableModel model = new DefaultTableModel(data, columnNames);
@@ -182,8 +226,12 @@ public class ImportDialog extends JDialog {
 
     }
     table.setRowSorter(new TableRowSorter<>((DefaultTableModel) table.getModel()));
+
+    // ソート順を再適用
+    table.getRowSorter().setSortKeys(sortKeys);
   }
 
+  // AttrDialogを開く。applyされたらentryMapを更新し、更にtableを更新
   private void openAttrDialog() {
     ArrayList<Entry> entryList = new ArrayList<Entry>();
     for (Object currentFileName : table.getSelectedColumnValues("Current Name")) {
@@ -193,22 +241,10 @@ public class ImportDialog extends JDialog {
     Util.setRect(attrDialog, appInfo.getRectAttr());
     attrDialog.setModal(true);
     attrDialog.setVisible(true);
-    updateTable();
-  }
-
-  void updateTable() {
-    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
-    String fileName;
-    Entry entry;
-    for (int tableRowIdx : table.getSelectedRows()) {
-      tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
-      fileName = (String) table.getModel().getValueAt(tableRowIdx,
-          columnModel.getColumnIndex("Current Name"));
-      entry = entryMap.get(fileName);
-      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx,
-          columnModel.getColumnIndex("Name to Store"));
-      // TODO テーブルカラムを増設した場合は他のカラムを更新する処理を加える
+    for (Entry entry : entryList) {
+      entryMap.put(entry.getPath().toFile().getName(), entry);
     }
+    updateTable();
   }
 
   /**
@@ -234,13 +270,8 @@ public class ImportDialog extends JDialog {
    *
    * @param entryList
    * @param appInfo
-   * @throws IOException
-   * @throws SQLException
-   * @throws InterruptedException
-   * @throws ExecutionException
    */
-  private void importEntry(ArrayList<Entry> entryList, AppInfo appInfo)
-      throws IOException, SQLException, InterruptedException, ExecutionException {
+  private void importEntry(ArrayList<Entry> entryList, AppInfo appInfo) {
     ArrayList<Entry> imcompletes = new ArrayList<Entry>();
     for (Entry entry : entryList) {
       // entryの情報が揃っているかをチェック
@@ -379,9 +410,10 @@ public class ImportDialog extends JDialog {
         // 保存先ディレクトリを設定
         File saveDir = Util.prepSaveDir(appInfo, srcFile);
 
-        // 保存先に移動
+        // 保存先のFileインスタンスを生成
         File newFile = new File(saveDir, entry.generateNameToSave() + ".zip");
-        // 同名のエントリが既に存在する場合、後置付随詞群に"再"を付け加えてエントリ名再生成
+
+        // 同名のエントリが既に存在する場合、後置付随詞群に"再"を付け加えて再生成
         if (newFile.exists()) {
           String note = entry.getNote();
           if (Objects.nonNull(note)) {
@@ -395,6 +427,8 @@ public class ImportDialog extends JDialog {
           entry.setNote(note);
           newFile = new File(saveDir, entry.generateNameToSave() + ".zip");
         }
+
+        // 移動実行
         if (srcFile.isFile()) {
           try {
             FileUtils.moveFile(srcFile, newFile);
@@ -411,6 +445,9 @@ public class ImportDialog extends JDialog {
         if (appInfo.getZipToStore() && entry.getPath().toFile().isDirectory()) {
           FileUtils.deleteDirectory(entry.getPath().toFile());
         }
+
+        // entryMapからインポート済みのエントリを除去
+        entryMap.remove(entry.getPath().toFile().getName());
 
         // Entryのサイズとパスを書き換え
         Double newSize;
@@ -448,6 +485,7 @@ public class ImportDialog extends JDialog {
 
     @Override
     protected void done() {
+      updateTable();
       setProgress(max);
     }
   }
@@ -458,30 +496,21 @@ public class ImportDialog extends JDialog {
    */
   private class ChangeDirAction extends AbstractAction {
 
-    ImportDialog importDialog;
-
-    public ChangeDirAction(ImportDialog importDialog) {
-      this.importDialog = importDialog;
-    }
-
     @Override
     public void actionPerformed(ActionEvent e) {
-      JFileChooser fileChooser = new JFileChooser();
-      fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-      fileChooser.setApproveButtonText("選択");
-      int selected = fileChooser.showOpenDialog(importDialog);
-      if (selected == JFileChooser.APPROVE_OPTION) {
-        importDialog.dirPath = fileChooser.getSelectedFile().toString();
-        importDialog.appInfo.setImptDir(dirPath);
-        Util.writeAppInfo(importDialog.appInfo);
-        try {
-          readEntries();
-        } catch (IOException e1) {
-          // TODO 自動生成された catch ブロック
-          e1.printStackTrace();
-        }
-      }
 
+      File newImptDir = chooseImptDir();
+      if (Objects.nonNull(newImptDir) && newImptDir.exists() && newImptDir.isDirectory()
+          || newImptDir.canRead()) {
+        imptDir = newImptDir;
+        dirPath = imptDir.getAbsolutePath().toString();
+        appInfo.setImptDir(dirPath);
+        Util.writeAppInfo(appInfo);
+
+        readEntries();
+        updateTable();
+
+      }
     }
 
   }
@@ -554,6 +583,7 @@ public class ImportDialog extends JDialog {
               } else {
                 entry.setNote(null);
               }
+              entryMap.put(fileName, entry);
             }
           }
           updateTable();
@@ -583,7 +613,9 @@ public class ImportDialog extends JDialog {
           try {
             Util.showInFiler(entry.getPath().toFile());
           } catch (IOException e1) {
-            // TODO 自動生成された catch ブロック
+            JOptionPane.showMessageDialog(null,
+                entry.getPath().toString() + " を標準ファイラで表示する際にエラーが発生", "エラー",
+                JOptionPane.ERROR_MESSAGE);
             e1.printStackTrace();
           }
 
@@ -598,12 +630,7 @@ public class ImportDialog extends JDialog {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-          try {
-            importEntry(getSelectedEntries(), appInfo);
-          } catch (IOException | SQLException | InterruptedException | ExecutionException e1) {
-            // TODO 自動生成された catch ブロック
-            e1.printStackTrace();
-          }
+          importEntry(getSelectedEntries(), appInfo);
         }
       });
       add(importEntries);
