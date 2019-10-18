@@ -129,12 +129,12 @@ public class Entry {
     Matcher matcher2 = pattern2.matcher(title);
     if (matcher.find()) {
       issue = matcher.group(1) + "-" + String.format("%02d", Integer.valueOf(matcher.group(2)));
-      title = title.replace(issue, "");
+      title = title.replace(matcher.group(0), "");
       title = trim(title);
       isMagazine = true;
     } else if (matcher2.find()) {
       issue = matcher2.group(1) + "-" + String.format("%02d", Integer.valueOf(matcher2.group(2)));
-      title = title.replace(issue, "");
+      title = title.replace(matcher2.group(0), "");
       title = trim(title);
       isMagazine = true;
     }
@@ -515,6 +515,10 @@ public class Entry {
 
     if (Objects.nonNull(subtitle)) {
       sb.append(" " + subtitle);
+    }
+
+    if (Objects.nonNull(issue)) {
+      sb.append(" " + issue);
     }
 
     if (Objects.nonNull(note)) {
