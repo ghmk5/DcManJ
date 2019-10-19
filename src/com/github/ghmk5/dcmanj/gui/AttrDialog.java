@@ -1,6 +1,7 @@
 package com.github.ghmk5.dcmanj.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Window;
@@ -26,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -46,17 +48,17 @@ public class AttrDialog extends JDialog {
   JRadioButton adultNullRB;
   JRadioButton adultFalseRB;
   JCheckBox adultCheckBox;
-  JTextField circleField;
-  JTextField authorField;
-  JTextField titleField;
-  JTextField subTitleField;
-  JTextField volumeField;
-  JTextField issueField;
+  ExtendedField circleField;
+  ExtendedField authorField;
+  ExtendedField titleField;
+  ExtendedField subTitleField;
+  ExtendedField volumeField;
+  ExtendedField issueField;
   JTextField pagesField;
   JTextField sizeField;
-  JTextField noteField;
-  JTextField originalField;
-  JTextField releaseField;
+  ExtendedField noteField;
+  ExtendedField originalField;
+  ExtendedField releaseField;
   JTextField dateField;
   JTextField pathField;
   JLabel generatedFileNameLabel;
@@ -115,31 +117,31 @@ public class AttrDialog extends JDialog {
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    circleField = new JTextField(18);
+    circleField = new ExtendedField(18);
     circleField.setBorder(new TitledBorder("サークル"));
     box.add(circleField);
-    authorField = new JTextField(18);
+    authorField = new ExtendedField(18);
     authorField.setBorder(new TitledBorder("著者"));
     box.add(authorField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    titleField = new JTextField(36);
+    titleField = new ExtendedField(36);
     titleField.setBorder(new TitledBorder("タイトル"));
     box.add(titleField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    subTitleField = new JTextField(36);
+    subTitleField = new ExtendedField(36);
     subTitleField.setBorder(new TitledBorder("サブタイトル"));
     box.add(subTitleField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    volumeField = new JTextField(9);
+    volumeField = new ExtendedField(9);
     volumeField.setBorder(new TitledBorder("巻号"));
     box.add(volumeField);
-    issueField = new JTextField(9);
+    issueField = new ExtendedField(9);
     issueField.setBorder(new TitledBorder("issue"));
     box.add(issueField);
     pagesField = new JTextField(9);
@@ -151,17 +153,17 @@ public class AttrDialog extends JDialog {
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    noteField = new JTextField(36);
+    noteField = new ExtendedField(36);
     noteField.setBorder(new TitledBorder("備考"));
     noteField.setComponentPopupMenu(new NoteFieldPopupMenu());
     box.add(noteField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    originalField = new JTextField(18);
+    originalField = new ExtendedField(18);
     originalField.setBorder(new TitledBorder("元ネタ"));
     box.add(originalField);
-    releaseField = new JTextField(18);
+    releaseField = new ExtendedField(18);
     releaseField.setBorder(new TitledBorder("配布イベント"));
     box.add(releaseField);
 
@@ -194,7 +196,7 @@ public class AttrDialog extends JDialog {
     });
     panel.add(cancelButton);
     JButton applyButton = new JButton("Apply");
-    applyButton.addActionListener(new ApplyAction(this));
+    applyButton.addActionListener(new ApplyAction());
     panel.add(applyButton);
 
     addWindowListener(new AttrDialogListner());
@@ -220,6 +222,7 @@ public class AttrDialog extends JDialog {
     ArrayList<String> originalList = new ArrayList<String>();
     ArrayList<String> releaseList = new ArrayList<String>();
     ArrayList<String> pathList = new ArrayList<String>();
+    ArrayList<String> generatedFileNameList = new ArrayList<String>();
 
     // 所与のエントリのリストのフィールド値をリストに格納
     for (Entry entry : entryList) {
@@ -242,6 +245,7 @@ public class AttrDialog extends JDialog {
       originalList.add(entry.getOriginal());
       releaseList.add(entry.getRelease());
       pathList.add(entry.getPath().getParent().toString());
+      generatedFileNameList.add(entry.generateNameToSave());
     }
 
     // フィールド値のリストの重複を除く
@@ -259,6 +263,7 @@ public class AttrDialog extends JDialog {
     originalList = new ArrayList<String>(new LinkedHashSet<>(originalList));
     releaseList = new ArrayList<String>(new LinkedHashSet<>(releaseList));
     pathList = new ArrayList<String>(new LinkedHashSet<>(pathList));
+    generatedFileNameList = new ArrayList<String>(new LinkedHashSet<>(generatedFileNameList));
 
     // 残った値が一つだけならその値をコンポーネントにセットする 値が複数ならそれ用の値をセットする
     if (typeList.size() == 1) {
@@ -298,11 +303,17 @@ public class AttrDialog extends JDialog {
     setTFValue(originalList, originalField);
     setTFValue(releaseList, releaseField);
     setTFValue(pathList, pathField);
+    if (generatedFileNameList.size() == 1) {
+      generatedFileNameLabel.setText(generatedFileNameList.get(0));
+    } else {
+      generatedFileNameLabel.setText("--ununified values--");
+    }
 
     // 以下のフィールドは変更不可(allpyしたときもEntryに反映させない)
     pagesField.setEnabled(false);
     sizeField.setEnabled(false);
     pathField.setEnabled(false);
+
 
   }
 
@@ -328,6 +339,14 @@ public class AttrDialog extends JDialog {
       textField.setText(valueList.get(0));
     } else {
       textField.setText("--ununified values--");
+    }
+  }
+
+  private class ExtendedField extends JTextField {
+
+    public ExtendedField(int i) {
+      super(i);
+      addActionListener(new ApplyAction());
     }
   }
 
@@ -357,9 +376,7 @@ public class AttrDialog extends JDialog {
   private class ApplyAction extends AbstractAction {
     AttrDialog attrDialog;
 
-    public ApplyAction(AttrDialog attrDialog) {
-      this.attrDialog = attrDialog;
-    }
+    public ApplyAction() {};
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -430,6 +447,8 @@ public class AttrDialog extends JDialog {
         } else if (!string.equals("--ununified values--")) {
           entry.setRelease(string);
         }
+        attrDialog = (AttrDialog) SwingUtilities.getAncestorOfClass(AttrDialog.class,
+            (Component) e.getSource());
         attrDialog.dispose();
       }
     }
