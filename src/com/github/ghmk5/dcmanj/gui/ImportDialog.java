@@ -241,10 +241,15 @@ public class ImportDialog extends JDialog {
     Util.setRect(attrDialog, appInfo.getRectAttr());
     attrDialog.setModal(true);
     attrDialog.setVisible(true);
+
+    // AttrDialogから制御が戻ってきたら、戻り値のentryListの中身をentryMapに反映
     for (Entry entry : entryList) {
       entryMap.put(entry.getPath().toFile().getName(), entry);
     }
-    updateTable();
+
+    // 選択された行の内容を更新する(updateTable()だと行選択が解除されてしまうので)
+    refreshSelectedRows();
+    // updateTable();
   }
 
   /**
@@ -263,6 +268,23 @@ public class ImportDialog extends JDialog {
       entryList.add(entryMap.get(fileName));
     }
     return entryList;
+  }
+
+  /**
+   * 選択された行の保存名を更新する
+   */
+  private void refreshSelectedRows() {
+    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
+    String fileName;
+    Entry entry;
+    for (int tableRowIdx : table.getSelectedRows()) {
+      tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
+      fileName = (String) table.getModel().getValueAt(tableRowIdx,
+          columnModel.getColumnIndex("Current Name"));
+      entry = entryMap.get(fileName);
+      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx,
+          columnModel.getColumnIndex("Name to Store"));
+    }
   }
 
   /**
@@ -320,11 +342,11 @@ public class ImportDialog extends JDialog {
    * @throws SQLException
    */
   public static void putNewRecord(Entry entry, File dbFile) throws SQLException {
-    Object[] values =
-        {entry.getType(), String.valueOf(entry.getAdult()), entry.getCircle(), entry.getAuthor(),
-            entry.getTitle(), entry.getSubtitle(), entry.getVolume(), entry.getIssue(),
-            entry.getNote(), entry.getPages(), entry.getSize(), entry.getPath().toString(),
-            entry.getDate().format(Util.DTF), entry.getOriginal(), entry.getRelease()};
+
+    Object[] values = {entry.getType(), entry.getAdult(), entry.getCircle(), entry.getAuthor(),
+        entry.getTitle(), entry.getSubtitle(), entry.getVolume(), entry.getIssue(), entry.getNote(),
+        entry.getPages(), entry.getSize(), entry.getPath().toString(),
+        entry.getDate().format(Util.DTF), entry.getOriginal(), entry.getRelease()};
     String[] valueStrings = new String[values.length];
     for (int i = 0; i < values.length; i++) {
       if (values[i] instanceof String) {
@@ -587,7 +609,7 @@ public class ImportDialog extends JDialog {
               entryMap.put(fileName, entry);
             }
           }
-          updateTable();
+          refreshSelectedRows();
         }
       });
       add(moveLastNoteToOriginal);
