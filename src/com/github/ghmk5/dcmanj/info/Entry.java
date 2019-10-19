@@ -464,8 +464,9 @@ public class Entry {
       dateString = null;
     }
     Object[] row = {getId(), getType(), getAdult(), getCircle(), getAuthor(), getTitle(),
-        getSubtitle(), getVolume(), getIssue(), getEntryTitle(), getNote(), getPages(), getSize(),
-        getPath().toString(), dateString, getOriginal(), getRelease()};
+        getSubtitle(), getVolume(), getIssue(), getEntryTitle(), getNote(), getPages(),
+        String.format("%.2f", getSize()), getPath().toString(), dateString, getOriginal(),
+        getRelease()};
     return row;
   }
 

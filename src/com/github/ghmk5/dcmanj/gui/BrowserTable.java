@@ -18,9 +18,11 @@ import java.util.HashMap;
 import java.util.Objects;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -84,6 +86,13 @@ public class BrowserTable extends ExtendedTable {
       this.removeColumn(
           this.getColumnModel().getColumn(this.getColumnModel().getColumnIndex(columnName)));
     }
+
+    // "容量"列に右詰めのレンダラを設定
+    DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+    rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+    getColumnModel().getColumn(this.getColumnModel().getColumnIndex("容量"))
+        .setCellRenderer(rightRenderer);
+
 
     // コンテキストメニュー
     TableContextMenu contextMenu = new TableContextMenu(this);
