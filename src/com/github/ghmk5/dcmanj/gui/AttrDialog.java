@@ -10,10 +10,12 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -22,6 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import com.github.ghmk5.dcmanj.info.AppInfo;
@@ -34,10 +37,14 @@ public class AttrDialog extends JDialog {
   ArrayList<Entry> entryList;
   Entry entry;
   AppInfo appInfo;
-  String[] types = {"", "comic", "comic_s", "doujinshi", "magazine", "novel"};
+  String[] types =
+      {"", "comic", "comic_s", "doujinshi", "magazine", "novel", "--ununified values--"};
   // Path dirToSave = Path.of("D:\\mag\\store"); // 保存先パス 最終的には環境設定で指定できるようにする
 
   JComboBox<String> typeComboBox;
+  JRadioButton adultTrueRB;
+  JRadioButton adultNullRB;
+  JRadioButton adultFalseRB;
   JCheckBox adultCheckBox;
   JTextField circleField;
   JTextField authorField;
@@ -81,12 +88,30 @@ public class AttrDialog extends JDialog {
 
     Box box = Box.createHorizontalBox();
     panel.add(box);
+
     typeComboBox = new JComboBox<String>(types);
     typeComboBox.setBorder(new TitledBorder("種別"));
     typeComboBox.setMaximumSize(new Dimension(128, 52));
     box.add(typeComboBox);
-    adultCheckBox = new JCheckBox("成人向");
-    box.add(adultCheckBox);
+
+    Box innerBox = Box.createHorizontalBox();
+    box.add(innerBox);
+    ButtonGroup adultButtonGroup = new ButtonGroup();
+    String adultRBToolTip =
+        "trueもしくはfalseが選択されている場合はその選択が成人向けフラグにセットされる。nullが選択されているときは成人向けフラグは変更されない";
+    adultTrueRB = new JRadioButton("true");
+    adultTrueRB.setToolTipText(adultRBToolTip);
+    adultButtonGroup.add(adultTrueRB);
+    innerBox.add(adultTrueRB);
+    adultNullRB = new JRadioButton("null");
+    adultNullRB.setToolTipText(adultRBToolTip);
+    adultButtonGroup.add(adultNullRB);
+    innerBox.add(adultNullRB);
+    adultFalseRB = new JRadioButton("false");
+    adultFalseRB.setToolTipText(adultRBToolTip);
+    adultButtonGroup.add(adultFalseRB);
+    innerBox.add(adultFalseRB);
+    innerBox.setBorder(new TitledBorder("成人向けフラグ"));
 
     box = Box.createHorizontalBox();
     panel.add(box);
@@ -178,39 +203,112 @@ public class AttrDialog extends JDialog {
     setResizable(false);
   }
 
+  // 引数として与えられたリスト内Entryの値をコンテナに反映させる
   private void loadValues(ArrayList<Entry> entryList) {
+
+    ArrayList<String> typeList = new ArrayList<String>();
+    ArrayList<Boolean> adultList = new ArrayList<Boolean>();
+    ArrayList<String> circleList = new ArrayList<String>();
+    ArrayList<String> authorList = new ArrayList<String>();
+    ArrayList<String> titleList = new ArrayList<String>();
+    ArrayList<String> subTitleList = new ArrayList<String>();
+    ArrayList<String> volumeList = new ArrayList<String>();
+    ArrayList<String> issueList = new ArrayList<String>();
+    ArrayList<Integer> pagesList = new ArrayList<Integer>();
+    ArrayList<Double> sizeList = new ArrayList<Double>();
+    ArrayList<String> noteList = new ArrayList<String>();
+    ArrayList<String> originalList = new ArrayList<String>();
+    ArrayList<String> releaseList = new ArrayList<String>();
+    ArrayList<String> pathList = new ArrayList<String>();
+
+    // 所与のエントリのリストのフィールド値をリストに格納
     for (Entry entry : entryList) {
-      // 引数として与えられたリスト内Entryの値をコンテナに反映させる 値未入力コンテナの内容はnullではなく""になるので注意
+      // 値未入力コンテナの内容はnullではなく""になるので注意
 
       // AttrDialogのコンストラクタに引数として与えたArrayList<Entry> の中身のEntryインスタンスがFileを引数にしたコンストラクタで作られている場合
       // (今の所そうなるように作ってある)、ここで使われるEntryインスタンスのpathフィールドには元ファイルのPathインスタンスが入っている
 
-      if (typeComboBox.getSelectedItem().equals("") && Objects.nonNull(entry.getType())) {
-        typeComboBox.setSelectedItem(entry.getType());
-      }
-      setTFValue(circleField, entry.getCircle());
-      setTFValue(authorField, entry.getAuthor());
-      setTFValue(titleField, entry.getTitle());
-      setTFValue(subTitleField, entry.getSubtitle());
-      setTFValue(volumeField, entry.getVolume());
-      setTFValue(issueField, entry.getIssue());
-      setTFValue(pagesField, String.valueOf(entry.getPages()));
-      setTFValue(sizeField, String.format("%.2f", entry.getSize()));
-      setTFValue(noteField, entry.getNote());
-      setTFValue(originalField, entry.getOriginal());
-      setTFValue(releaseField, entry.getRelease());
-      setTFValue(pathField, entry.getPath().getParent().toString());
-
-      pagesField.setEditable(false);
-      sizeField.setEditable(false);
-      pathField.setEditable(false);
-
+      typeList.add(entry.getType());
+      adultList.add(entry.getAdult());
+      circleList.add(entry.getCircle());
+      authorList.add(entry.getAuthor());
+      titleList.add(entry.getTitle());
+      subTitleList.add(entry.getSubtitle());
+      volumeList.add(entry.getVolume());
+      issueList.add(entry.getIssue());
+      pagesList.add(entry.getPages());
+      sizeList.add(entry.getSize());
+      noteList.add(entry.getNote());
+      originalList.add(entry.getOriginal());
+      releaseList.add(entry.getRelease());
+      pathList.add(entry.getPath().getParent().toString());
     }
+
+    // フィールド値のリストの重複を除く
+    typeList = new ArrayList<String>(new LinkedHashSet<>(typeList));
+    adultList = new ArrayList<Boolean>(new LinkedHashSet<>(adultList));
+    circleList = new ArrayList<String>(new LinkedHashSet<>(circleList));
+    authorList = new ArrayList<String>(new LinkedHashSet<>(authorList));
+    titleList = new ArrayList<String>(new LinkedHashSet<>(titleList));
+    subTitleList = new ArrayList<String>(new LinkedHashSet<>(subTitleList));
+    volumeList = new ArrayList<String>(new LinkedHashSet<>(volumeList));
+    issueList = new ArrayList<String>(new LinkedHashSet<>(issueList));
+    pagesList = new ArrayList<Integer>(new LinkedHashSet<>(pagesList));
+    sizeList = new ArrayList<Double>(new LinkedHashSet<>(sizeList));
+    noteList = new ArrayList<String>(new LinkedHashSet<>(noteList));
+    originalList = new ArrayList<String>(new LinkedHashSet<>(originalList));
+    releaseList = new ArrayList<String>(new LinkedHashSet<>(releaseList));
+    pathList = new ArrayList<String>(new LinkedHashSet<>(pathList));
+
+    // 残った値が一つだけならその値をコンポーネントにセットする 値が複数ならそれ用の値をセットする
+    if (typeList.size() == 1) {
+      typeComboBox.setSelectedItem(typeList.get(0));
+    } else {
+      typeComboBox.setSelectedItem("--ununified values--");
+    }
+    if (adultList.size() == 1) {
+      Boolean selected = adultList.get(0);
+      if (Objects.isNull(selected)) {
+        adultNullRB.setSelected(true);
+      } else if (selected) {
+        adultTrueRB.setSelected(true);
+      } else {
+        adultFalseRB.setSelected(true);
+      }
+    } else {
+      adultNullRB.setSelected(true);
+    }
+    setTFValue(circleList, circleField);
+    setTFValue(authorList, authorField);
+    setTFValue(titleList, titleField);
+    setTFValue(subTitleList, subTitleField);
+    setTFValue(volumeList, volumeField);
+    setTFValue(issueList, issueField);
+    if (pagesList.size() == 1) {
+      pagesField.setText(String.valueOf(pagesList.get(0)));
+    } else {
+      pagesField.setText("--ununified values--");
+    }
+    if (sizeList.size() == 1) {
+      sizeField.setText(String.format("%.2f", sizeList.get(0)));
+    } else {
+      sizeField.setText("--ununified values--");
+    }
+    setTFValue(noteList, noteField);
+    setTFValue(originalList, originalField);
+    setTFValue(releaseList, releaseField);
+    setTFValue(pathList, pathField);
+
+    // 以下のフィールドは変更不可(allpyしたときもEntryに反映させない)
+    pagesField.setEnabled(false);
+    sizeField.setEnabled(false);
+    pathField.setEnabled(false);
+
   }
 
   private void clearFields() {
     typeComboBox.setSelectedIndex(0);
-    adultCheckBox.setSelected(false);
+    adultNullRB.setSelected(true);
     circleField.setText("");
     authorField.setText("");
     titleField.setText("");
@@ -225,13 +323,11 @@ public class AttrDialog extends JDialog {
     pathField.setText("");
   }
 
-  private void setTFValue(JTextField textField, String string) {
-    if (Objects.nonNull(string)) {
-      if (textField.getText().equals("")) {
-        textField.setText(string);
-      } else if (!textField.getText().equals(string)) {
-        textField.setText("--ununified values--");
-      }
+  private void setTFValue(ArrayList<String> valueList, JTextField textField) {
+    if (valueList.size() == 1) {
+      textField.setText(valueList.get(0));
+    } else {
+      textField.setText("--ununified values--");
     }
   }
 
@@ -275,7 +371,11 @@ public class AttrDialog extends JDialog {
         } else if (!string.equals("--ununified values--")) {
           entry.setType(string);
         }
-        entry.setAdult(adultCheckBox.isSelected());
+        if (adultTrueRB.isSelected()) {
+          entry.setAdult(true);
+        } else if (adultFalseRB.isSelected()) {
+          entry.setAdult(false);
+        }
         string = circleField.getText();
         if (string.equals("")) {
           entry.setCircle(null);
