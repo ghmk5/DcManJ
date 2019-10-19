@@ -1,6 +1,7 @@
 package com.github.ghmk5.dcmanj.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -40,6 +41,7 @@ import javax.swing.RowSorter.SortKey;
 import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import org.apache.commons.io.FileUtils;
 import com.github.ghmk5.dcmanj.info.AppInfo;
@@ -104,7 +106,29 @@ public class ImportDialog extends JDialog {
     checkBox.setSelected(appInfo.getZipToStore());
     panel.add(checkBox);
 
-    table = new ExtendedTable();
+    table = new ExtendedTable() {
+
+      // entry.isReady()がfalseの行は赤文字にする
+      @Override
+      public Component prepareRenderer(TableCellRenderer tcr, int row, int column) {
+        Component c = super.prepareRenderer(tcr, row, column);
+        String filename = (String) getValueAt(row, 1);
+        Entry entry = entryMap.get(filename);
+        Boolean ready = null;
+        if (Objects.nonNull(entry)) {
+          ready = entry.isReady();
+          if (!ready) {
+            c.setForeground(Color.RED);
+          } else {
+            c.setForeground(getForeground());
+          }
+        } else {
+          c.setForeground(getForeground());
+        }
+        return c;
+      }
+
+    };
     table.getTableHeader().setFont(browserWindow.main.tableFont);
     table.setFont(browserWindow.main.tableFont);
     table.addMouseListener(new MouseAdapter() {
@@ -198,7 +222,7 @@ public class ImportDialog extends JDialog {
     for (String fileName : entryMap.keySet()) {
       entry = entryMap.get(fileName);
       srcFile = entry.getPath().toFile();
-      rowData = new String[3];
+      rowData = new String[4];
       if (srcFile.isFile()) {
         rowData[0] = "file";
       } else if (srcFile.isDirectory()) {
@@ -207,13 +231,14 @@ public class ImportDialog extends JDialog {
         rowData[0] = "unknown (simlink?)";
       }
       rowData[1] = srcFile.getName();
-      rowData[2] = entry.generateNameToSave();
+      rowData[2] = entry.getOriginal();
+      rowData[3] = entry.generateNameToSave();
       dataList.add(rowData);
     }
 
     // データモデルを生成し、テーブルに適用
-    String[] columnNames = {"type", "Current Name", "Name to Store"};
-    String[][] data = dataList.toArray(new String[3][dataList.size()]);
+    String[] columnNames = {"type", "Current Name", "original", "Name to Store"};
+    String[][] data = dataList.toArray(new String[4][dataList.size()]);
     DefaultTableModel model = new DefaultTableModel(data, columnNames);
     model.setColumnIdentifiers(columnNames);
     table.setModel(model);
@@ -229,6 +254,25 @@ public class ImportDialog extends JDialog {
 
     // ソート順を再適用
     table.getRowSorter().setSortKeys(sortKeys);
+  }
+
+  /**
+   * 選択された行の保存名を更新する
+   */
+  private void refreshSelectedRows() {
+    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
+    String fileName;
+    Entry entry;
+    for (int tableRowIdx : table.getSelectedRows()) {
+      tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
+      fileName = (String) table.getModel().getValueAt(tableRowIdx,
+          columnModel.getColumnIndex("Current Name"));
+      entry = entryMap.get(fileName);
+      table.getModel().setValueAt(entry.getOriginal(), tableRowIdx,
+          columnModel.getColumnIndex("original"));
+      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx,
+          columnModel.getColumnIndex("Name to Store"));
+    }
   }
 
   // AttrDialogを開く。applyされたらentryMapを更新し、更にtableを更新
@@ -249,7 +293,6 @@ public class ImportDialog extends JDialog {
 
     // 選択された行の内容を更新する(updateTable()だと行選択が解除されてしまうので)
     refreshSelectedRows();
-    // updateTable();
   }
 
   /**
@@ -268,23 +311,6 @@ public class ImportDialog extends JDialog {
       entryList.add(entryMap.get(fileName));
     }
     return entryList;
-  }
-
-  /**
-   * 選択された行の保存名を更新する
-   */
-  private void refreshSelectedRows() {
-    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
-    String fileName;
-    Entry entry;
-    for (int tableRowIdx : table.getSelectedRows()) {
-      tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
-      fileName = (String) table.getModel().getValueAt(tableRowIdx,
-          columnModel.getColumnIndex("Current Name"));
-      entry = entryMap.get(fileName);
-      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx,
-          columnModel.getColumnIndex("Name to Store"));
-    }
   }
 
   /**

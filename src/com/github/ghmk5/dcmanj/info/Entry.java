@@ -354,7 +354,7 @@ public class Entry {
             isDoujinshi = true;
             break;
           }
-          if (prePosition.contains("コミック")) {
+          if (prePosition.matches(".*?コミック$")) {
             isComic = true;
             if (prePosition.matches(".*成[年人].*")) {
               adult = true;
@@ -627,7 +627,7 @@ public class Entry {
    */
   public boolean isReady() {
     boolean result;
-    if (Objects.isNull(type)) {
+    if (Objects.isNull(type) || type.equals("unknown") || title.equals("")) {
       result = false;
     } else if (Objects.isNull(title) || title.equals("")) {
       result = false;
