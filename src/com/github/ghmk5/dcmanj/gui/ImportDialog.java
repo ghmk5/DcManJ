@@ -421,7 +421,7 @@ public class ImportDialog extends JDialog {
     }
 
     @Override
-    protected Object doInBackground() throws Exception {
+    protected Object doInBackground() throws IOException, SQLException {
       for (Entry entry : entryList) {
 
         if (progressMonitor.isCanceled()) {
@@ -479,13 +479,7 @@ public class ImportDialog extends JDialog {
 
         // 移動実行
         if (srcFile.isFile()) {
-          try {
-            FileUtils.moveFile(srcFile, newFile);
-          } catch (IOException e) {
-            System.out.println(newFile.toPath().toString());
-            e.printStackTrace();
-            continue;
-          }
+          FileUtils.moveFile(srcFile, newFile);
         } else {
           FileUtils.moveDirectory(srcFile, newFile);
         }
