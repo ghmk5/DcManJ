@@ -54,7 +54,7 @@ public class Entry {
     this.appInfo = appInfo;
 
     path = file.toPath();
-    adult = false;
+    adult = null;
     isComic = false;
     isDoujinshi = false;
     isMagazine = false;
@@ -100,7 +100,7 @@ public class Entry {
 
     // 前置付随詞群をパース
     if (Objects.nonNull(prePositions)) {
-      parsePreps(prePositions);
+      prePositions = parsePreps(prePositions);
     }
 
     // 最初のブラケットの中身をパース
@@ -169,18 +169,11 @@ public class Entry {
     // タイトル部分をパース -- 付録表記を検出
     note = null;
     noteAsList = new ArrayList<String>();
-    pattern = Pattern.compile(" \\+ [^ ]+カード");
+    pattern = Pattern.compile(" \\+ [^ ]+[(カード)|(リーフレット)|(小冊子)]$");
     matcher = pattern.matcher(title);
-    pattern2 = Pattern.compile(" \\+ [^ ]+リーフレット");
-    matcher2 = pattern2.matcher(title);
     String foundString;
     if (matcher.find()) {
       foundString = matcher.group(0);
-      noteAsList.add(trim(foundString));
-      title = title.replace(foundString, "");
-      title = trim(title);
-    } else if (matcher2.find()) {
-      foundString = matcher2.group(0);
       noteAsList.add(trim(foundString));
       title = title.replace(foundString, "");
       title = trim(title);
@@ -191,6 +184,14 @@ public class Entry {
       parsePostps(postPositions);
     }
 
+    // パース後に残った前置付随詞があれば備考の先頭に追加
+    // ∵ 最後に追加すると(もしあれば)元ネタ候補の位置が崩れるため
+    if (Objects.nonNull(prePositions)) {
+      for (String prePosition : prePositions.split(",")) {
+        noteAsList.add(0, prePosition);
+      }
+    }
+
     // 備考のリストをStringにしてフィールドに代入
     if (noteAsList.size() > 0) {
       note = String.join(",", noteAsList.toArray(new String[noteAsList.size()]));
@@ -198,6 +199,11 @@ public class Entry {
 
     // 可能なら種別をセット
     setType();
+
+    // 種別が同人誌でadultフラグがnullならtrueにセット
+    if (Objects.nonNull(type) && type.equals("doujinshi") && Objects.isNull(adult)) {
+      adult = true;
+    }
 
     // サイズをセット
     if (file.isFile()) {
@@ -289,6 +295,11 @@ public class Entry {
     if (Objects.isNull(noteAsList)) {
       noteAsList = new ArrayList<String>();
     }
+
+    // appInfo.noteRegExStringsに登録された要素がリストの先頭にくるように
+    // = 登録されていない要素がリストの最後になるようにリストを構築
+    // ∵ 登録されていない要素は元ネタの可能性が高いので、ImportDialogのコンテキストメニューアイテム
+    // "最後の要素を元ネタに移動"で扱えるようにするため
     String foundString;
     for (String postPosition : postPositionsList) {
       for (String regEx : appInfo.getNoteRegExStrings()) {
@@ -314,7 +325,7 @@ public class Entry {
   }
 
   // 前置付随詞群をパースする
-  private void parsePreps(String prePositions) {
+  private String parsePreps(String prePositions) {
 
     // 前置付随詞群を分割
     ArrayList<String> prePositionsList =
@@ -330,7 +341,7 @@ public class Entry {
     isComic = false;
     isMagazine = false;
     isNovel = false;
-    adult = false;
+    adult = null;
     ArrayList<String> elementsToRemove = new ArrayList<String>();
     if (Objects.nonNull(prePositions)) {
       for (String prePosition : prePositionsList) {
@@ -352,11 +363,13 @@ public class Entry {
           }
           if (prePosition.contains("同人")) {
             isDoujinshi = true;
-            adult = true;
             if (prePosition.contains("CG集")) {
               noteAsList.add("CG集");
             }
             elementsToRemove.add(prePosition);
+          }
+          if (prePosition.contains("一般")) {
+            adult = false;
           }
           if (prePosition.contains("雑誌")) {
             isMagazine = true;
@@ -369,6 +382,11 @@ public class Entry {
       }
     }
 
+    if (prePositionsList.size() == 0) {
+      return null;
+    } else {
+      return String.join(",", prePositionsList.toArray(new String[prePositionsList.size()]));
+    }
 
   }
 
@@ -471,10 +489,14 @@ public class Entry {
         }
         break;
       case "comic":
-        if (adult) {
-          sb.append("(成年コミック)");
+        if (Objects.nonNull(adult)) {
+          if (adult) {
+            sb.append("(成年コミック)");
+          } else {
+            sb.append("(一般コミック)");
+          }
         } else {
-          sb.append("(一般コミック)");
+          sb.append("(コミック)");
         }
         sb.append(" [");
         if (Objects.nonNull(author)) {
@@ -484,10 +506,14 @@ public class Entry {
         }
         break;
       case "magazine":
-        if (adult) {
-          sb.append("(成年コミック) [雑誌] ");
+        if (Objects.nonNull(adult)) {
+          if (adult) {
+            sb.append("(成年コミック) [雑誌] ");
+          } else {
+            sb.append("(一般コミック) [雑誌] ");
+          }
         } else {
-          sb.append("(一般コミック) [雑誌] ");
+          sb.append("(コミック) [雑誌] ");
         }
         break;
       case "novel":
@@ -524,9 +550,14 @@ public class Entry {
     if (Objects.nonNull(note)) {
       sb.append(" ");
       ArrayList<String> noteAsList = new ArrayList<String>(Arrays.asList(note.split(",")));
+      if (Objects.nonNull(original)) {
+        noteAsList.add(original);
+      }
       for (String element : noteAsList) {
         sb.append("(" + element + ")");
       }
+    } else if (Objects.nonNull(original)) {
+      sb.append(" (" + original + ")");
     }
 
     // ファイル名に使えない文字を全角に置換
