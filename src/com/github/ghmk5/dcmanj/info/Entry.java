@@ -563,7 +563,7 @@ public class Entry {
     // ファイル名に使えない文字を全角に置換
     String filename = sb.toString().replaceAll("\\\\", "＼").replaceAll("/", "／")
         .replaceAll(":", "：").replaceAll("\\?", "？").replaceAll("\"", "”").replaceAll("<", "＜")
-        .replaceAll(">", "＞").replaceAll("\\|", "｜");
+        .replaceAll(">", "＞").replaceAll("\\|", "｜").replaceAll("\\*", "＊");
 
     return filename;
   }
