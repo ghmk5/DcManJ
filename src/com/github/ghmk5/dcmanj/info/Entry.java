@@ -9,6 +9,7 @@ import java.text.Normalizer;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -168,7 +169,9 @@ public class Entry {
 
     // タイトル部分をパース -- 付録表記を検出
     note = null;
-    noteAsList = new ArrayList<String>();
+    if (Objects.isNull(noteAsList)) {
+      noteAsList = new ArrayList<String>();
+    }
     pattern = Pattern.compile(" \\+ [^ ]+[(カード)|(リーフレット)|(小冊子)]$");
     matcher = pattern.matcher(title);
     String foundString;
@@ -191,6 +194,9 @@ public class Entry {
         noteAsList.add(0, prePosition);
       }
     }
+
+    // 備考の重複を除く
+    noteAsList = new ArrayList<String>(new LinkedHashSet<>(noteAsList));
 
     // 備考のリストをStringにしてフィールドに代入
     if (noteAsList.size() > 0) {
