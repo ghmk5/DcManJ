@@ -2,6 +2,7 @@ package com.github.ghmk5.dcmanj.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -194,6 +195,7 @@ public class BrowserWindow extends JFrame {
       BrowserWindow newWindow = new BrowserWindow(browserWindow.main);
       newWindow.setLocationCascadeOn(browserWindow);
       browserWindow.main.listBrowserWindows.add(newWindow);
+      newWindow.setSize(new Dimension(browserWindow.getWidth(), newWindow.getHeight()));
       newWindow.setVisible(true);
     }
   }

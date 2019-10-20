@@ -1,6 +1,7 @@
 package com.github.ghmk5.dcmanj.gui;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -284,6 +285,7 @@ public class BrowserTable extends ExtendedTable {
         main.listBrowserWindows.add(newWindow);
         newWindow.refreshTable(sql);
         newWindow.setLocationCascadeOn(browserWindow);
+        newWindow.setSize(new Dimension(browserWindow.getWidth(), newWindow.getHeight()));
         newWindow.setVisible(true);
       } catch (Exception e1) {
         // TODO: handle exception
