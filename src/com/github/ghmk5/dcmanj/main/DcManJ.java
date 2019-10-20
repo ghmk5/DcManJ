@@ -55,12 +55,13 @@ public class DcManJ {
         main.listBrowserWindows.add(browserWindow);
 
         Util.setRect(browserWindow, main.appInfo.getRectMain());
-        try {
-          browserWindow.refreshTable("select rowid, * from magdb order by rowid desc;");
-        } catch (SQLException e) {
-          // TODO 自動生成された catch ブロック
-          e.printStackTrace();
-        }
+        browserWindow.refreshTable("select rowid, * from magdb order by rowid desc;");
+        // try {
+        // browserWindow.refreshTable("select rowid, * from magdb order by rowid desc;");
+        // } catch (SQLException e) {
+        // // TODO 自動生成された catch ブロック
+        // e.printStackTrace();
+        // }
         browserWindow.setVisible(true);
       }
     });
