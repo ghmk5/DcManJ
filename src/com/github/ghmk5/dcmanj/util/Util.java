@@ -120,6 +120,32 @@ public class Util {
   }
 
   /**
+   * nullであり得る2つのObjectが一致するか否かを返す<BR>
+   * 2つが共にnullの場合は真、片方のみがnullであれば偽を返し、2つが共にnonNullであればequals()の結果を返す
+   *
+   * @param subject
+   * @param object
+   * @return
+   */
+  public static Boolean isIdentical(Object subject, Object object) {
+    boolean result;
+    if (Objects.isNull(subject)) {
+      if (Objects.isNull(object)) {
+        result = true;
+      } else {
+        result = false;
+      }
+    } else {
+      if (Objects.isNull(object)) {
+        result = false;
+      } else {
+        result = subject.equals(object);
+      }
+    }
+    return result;
+  }
+
+  /**
    * JDialogでESCキーを"ダイアログを閉じる"にマップする
    *
    * @param jDialog
