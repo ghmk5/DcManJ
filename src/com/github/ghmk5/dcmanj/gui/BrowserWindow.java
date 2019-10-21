@@ -4,9 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -14,7 +12,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
@@ -29,7 +26,6 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
@@ -231,7 +227,7 @@ public class BrowserWindow extends JFrame {
       outerSqlBuilder.append(" where ");
       outerSqlBuilder.append(String.join(" and ", criteria.toArray(new String[criteria.size()])));
     }
-    outerSqlBuilder.append(";");
+    outerSqlBuilder.append(" order by rowid desc;");
     return outerSqlBuilder.toString();
   }
 
@@ -358,17 +354,7 @@ public class BrowserWindow extends JFrame {
   }
 
   public void refreshTable(String sql) {
-    try {
-      table.refresh(sql);
-    } catch (SQLException e1) {
-      StringSelection selection = new StringSelection(sql);
-      Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
-      JOptionPane.showMessageDialog(this,
-          "下記のSQL文の実行時にエラーが発生しました\n\n  \"" + sql + "\"\n\n  SQL文をクリップボードにコピーしました", "データベースエラー",
-          JOptionPane.ERROR_MESSAGE);
-      e1.printStackTrace();
-    }
-    // table.refresh(sql);
+    table.refresh(sql);
   }
 
   class TextFieldContextMenu extends JPopupMenu {
@@ -417,12 +403,7 @@ public class BrowserWindow extends JFrame {
     String sql =
         "select rowid, * from magdb where title like " + queryWord + " or circle like " + queryWord
             + " or author like " + queryWord + " or subtitle like " + queryWord + "escape \'^\';";
-    try {
-      table.refresh(sql);
-    } catch (SQLException e1) {
-      // TODO 自動生成された catch ブロック
-      e1.printStackTrace();
-    }
+    table.refresh(sql);
 
   }
 }

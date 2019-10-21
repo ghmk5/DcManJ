@@ -4,7 +4,9 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.beans.XMLDecoder;
@@ -23,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -260,7 +263,7 @@ public class Util {
 
   /**
    * AppInfoをファイルに記録する
-   * 
+   *
    * @param appInfo
    */
   public static void writeAppInfo(AppInfo appInfo) {
@@ -310,6 +313,12 @@ public class Util {
     window.setBounds(rectToSet);
   }
 
+  /**
+   * SQL文のLIKEステートメントで扱うためにクエリワードをクォートして返す
+   *
+   * @param string クォートしたいクエリワード
+   * @return エスケープする必要がある文字列をエスケープした上でシングルクォートで囲んだクエリワード
+   */
   public static String quoteForLike(String string) {
     String result;
     result = string.replaceAll("\'", "\'\'");
@@ -317,6 +326,59 @@ public class Util {
     result = result.replaceAll("%", "^%");
     result = "\'%" + result + "%\'";
     return result;
+  }
+
+  /**
+   * Runtime.exec()で発生したIOException、またはSQLステートメント実行時に発生したSQLExceptionに対する<BR>
+   * エラーメッセージを表示する
+   *
+   * @param owner メッセージダイアログを表示する親コンポーネント null可
+   * @param e Exceptionのインスタンス
+   * @param string runtimeに与えたコマンドもしくはデータベースに与えたSQL文
+   */
+  public static void showErrorMessage(Component owner, Exception e, String string) {
+    String errorType;
+    String firstHalfOfMessage;
+    String secondHalfOfMessage;
+    String message;
+    if (e instanceof IOException) {
+      // Runtime.getRuntime().exec(new String[] {})実行時のエラーのみを想定している
+      // 他の原因でIOExceptionが発生した場合には適用できないので注意
+      // また、Runtime.exec()から出たIOExceptionであっても、cmd.exeがエラーを返さない場合(コマンドが見つからないなど)は捕捉できない
+      errorType = "IOエラー";
+      firstHalfOfMessage = "下記コマンド実行時にIOExcepationが発生しました";
+      secondHalfOfMessage = "コマンド文字列をクリップボードにコピーしました";
+      message = String.join("\n\n",
+          (new String[] {firstHalfOfMessage, "  " + string, secondHalfOfMessage}));
+      StringSelection selection = new StringSelection(string);
+      Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+    } else if (e instanceof SQLException) {
+      errorType = "SQLエラー";
+      firstHalfOfMessage = "下記のSQL文の実行時にエラーが発生しました";
+      secondHalfOfMessage = "SQL文をクリップボードにコピーしました";
+      message = String.join("\n\n",
+          (new String[] {firstHalfOfMessage, "  " + string, secondHalfOfMessage}));
+      StringSelection selection = new StringSelection(string);
+      Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+    } else {
+      errorType = "不明なエラー";
+      message = "想定外のエラーが発生しました";
+    }
+    JOptionPane.showMessageDialog(owner, message, errorType, JOptionPane.ERROR_MESSAGE);
+  }
+
+  /**
+   * Windowsのcmd.exeに引数として渡すために特殊文字をエスケープして返す<BR>
+   * エスケープされる特殊文字は & ( ) % ^<BR>
+   * explorer.exeの引数に使う場合、このメソッドの戻り値を"^\""でくくる必要がある<BR>
+   * (パス中の"="に対応するため)
+   *
+   * @param pathString File.getPath().toString()などして取得したパス文字列
+   * @return cmd.exeで使用される特殊文字を"^"でエスケープした文字列
+   */
+  public static String escapeForCMD(String pathString) {
+    return pathString.replaceAll("\\^", "^^").replaceAll("&", "^&").replaceAll("%", "^%")
+        .replaceAll("\\(", "^(").replaceAll("\\)", "^)");
   }
 
   /**
@@ -336,15 +398,58 @@ public class Util {
       if (!entryPath.contains(" ")) {
         entryPath = escapeForCMD(entryPath);
       }
+      String[] command = {"cmd", "/c", "\"" + viewerPath, entryPath + "\""};
       try {
-        String[] command = {"cmd", "/c", "\"" + viewerPath, entryPath + "\""};
         Runtime.getRuntime().exec(command);
-      } catch (IOException e1) {
-        // TODO 自動生成された catch ブロック
-        e1.printStackTrace();
+      } catch (IOException e) {
+        showErrorMessage(null, e, String.join(" ", command));
+        e.printStackTrace();
       }
     } else {
       JOptionPane.showMessageDialog(null, "ビューワアプリケーションが設定されていません");
+    }
+  }
+
+  /**
+   * 所与のFileをOS標準のファイラ上に表示する<BR>
+   * Fileがディレクトリの場合はその内部を、ファイルであれば親ディレクトリを開く
+   *
+   * @param file
+   * @throws IOException
+   */
+  public static void showInFiler(Window owner, File file) {
+    String osName = System.getProperty("os.name").toLowerCase();
+    ArrayList<String> commandList = new ArrayList<String>();
+    if (osName.startsWith("windows")) {
+      commandList.add("cmd");
+      commandList.add("/c");
+      StringBuilder argBuilder = new StringBuilder("%windir%\\explorer ");
+      if (file.isFile()) {
+        argBuilder.append("/select,");
+      }
+      argBuilder.append("^\"" + escapeForCMD(file.getPath().toString()) + "^\"");
+      commandList.add(argBuilder.toString());
+    } else if (osName.startsWith("mac")) {
+      commandList.add("open");
+      if (file.isDirectory()) {
+        commandList.add(file.getPath().toString());
+      } else {
+        commandList.add(file.getParentFile().getPath().toString());
+      }
+    } else {
+      JOptionPane.showMessageDialog(null,
+          "使用中のOSに対応したコマンドが登録されていません(クラス:Util, メソッド:showInFiler(File file))", "アプリケーションエラー",
+          JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+    Runtime runtime = Runtime.getRuntime();
+    String[] commandArray = commandList.toArray(new String[commandList.size()]);
+    try {
+      runtime.exec(commandArray);
+    } catch (IOException e) {
+      String commandString = String.join(" ", commandArray);
+      showErrorMessage(owner, e, commandString);
+      e.printStackTrace();
     }
   }
 
@@ -471,56 +576,6 @@ public class Util {
       newSaveDir.mkdir();
     }
     return newSaveDir;
-  }
-
-  /**
-   * Windowsのcmd.exeに引数として渡すために特殊文字をエスケープして返す<BR>
-   * エスケープされる特殊文字は & ( ) % ^<BR>
-   * explorer.exeの引数に使う場合、このメソッドの戻り値を"^\""でくくる必要がある<BR>
-   * (パス中の"="に対応するため)
-   *
-   * @param pathString File.getPath().toString()などして取得したパス文字列
-   * @return cmd.exeで使用される特殊文字を"^"でエスケープした文字列
-   */
-  public static String escapeForCMD(String pathString) {
-    return pathString.replaceAll("\\^", "^^").replaceAll("&", "^&").replaceAll("%", "^%")
-        .replaceAll("\\(", "^(").replaceAll("\\)", "^)");
-  }
-
-  /**
-   * 所与のFileをOS標準のファイラ上に表示する<BR>
-   * Fileがディレクトリの場合はその内部を、ファイルであれば親ディレクトリを開く
-   *
-   * @param file
-   * @throws IOException
-   */
-  public static void showInFiler(File file) throws IOException {
-    String osName = System.getProperty("os.name").toLowerCase();
-    ArrayList<String> commandList = new ArrayList<String>();
-    if (osName.startsWith("windows")) {
-      commandList.add("cmd");
-      commandList.add("/c");
-      StringBuilder argBuilder = new StringBuilder("%windir%\\explorer ");
-      if (file.isFile()) {
-        argBuilder.append("/select,");
-      }
-      argBuilder.append("^\"" + escapeForCMD(file.getPath().toString()) + "^\"");
-      commandList.add(argBuilder.toString());
-    } else if (osName.startsWith("mac")) {
-      commandList.add("open");
-      if (file.isDirectory()) {
-        commandList.add(file.getPath().toString());
-      } else {
-        commandList.add(file.getParentFile().getPath().toString());
-      }
-    } else {
-      JOptionPane.showMessageDialog(null,
-          "使用中のOSに対応したコマンドが登録されていません(クラス:Util, メソッド:showInFiler(File file))", "エラー",
-          JOptionPane.ERROR_MESSAGE);
-      return;
-    }
-    Runtime runtime = Runtime.getRuntime();
-    runtime.exec(commandList.toArray(new String[commandList.size()]));
   }
 
 }

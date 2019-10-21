@@ -38,6 +38,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.RowSorter.SortKey;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -583,6 +584,7 @@ public class ImportDialog extends JDialog {
 
   private class TableContextMenu extends JPopupMenu {
 
+    ImportDialog importDialog;
     JMenuItem setAttr;
     JMenuItem moveLastNoteToOriginal;
     JMenuItem openWithViewer;
@@ -591,6 +593,7 @@ public class ImportDialog extends JDialog {
 
     public TableContextMenu() {
 
+      importDialog = (ImportDialog) SwingUtilities.getAncestorOfClass(ImportDialog.class, table);
       setAttr = new JMenuItem("属性を設定...");
       setAttr.addActionListener(new AbstractAction() {
 
@@ -653,15 +656,7 @@ public class ImportDialog extends JDialog {
         @Override
         public void actionPerformed(ActionEvent e) {
           Entry entry = getSelectedEntries().get(0);
-          try {
-            Util.showInFiler(entry.getPath().toFile());
-          } catch (IOException e1) {
-            JOptionPane.showMessageDialog(null,
-                entry.getPath().toString() + " を標準ファイラで表示する際にエラーが発生", "エラー",
-                JOptionPane.ERROR_MESSAGE);
-            e1.printStackTrace();
-          }
-
+          Util.showInFiler(importDialog, entry.getPath().toFile());
         }
       });
       add(showFiles);

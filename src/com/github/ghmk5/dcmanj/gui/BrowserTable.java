@@ -8,7 +8,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -103,12 +102,7 @@ public class BrowserTable extends ExtendedTable {
     addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2 && getSelectedRows().length == 1) {
-          try {
-            Util.openWithViewer(main.appInfo, getEntries().get(0));
-          } catch (SQLException e) {
-            System.out.println("BrowserTableの選択行からEntryを取得する際にSQL例外が発生した");
-            e.printStackTrace();
-          }
+          Util.openWithViewer(main.appInfo, getEntries().get(0));
         }
       }
     });
@@ -169,12 +163,9 @@ public class BrowserTable extends ExtendedTable {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-          try {
-            Util.showInFiler(browserTable.getEntries().get(0).getPath().toFile());
-          } catch (IOException | SQLException e1) {
-            // TODO 自動生成された catch ブロック
-            e1.printStackTrace();
-          }
+          BrowserWindow browserWindow =
+              (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
+          Util.showInFiler(browserWindow, browserTable.getEntries().get(0).getPath().toFile());
         }
       };
       add(openFilerAction);
@@ -184,30 +175,24 @@ public class BrowserTable extends ExtendedTable {
     public void show(Component c, int x, int y) {
       if ((((BrowserTable) c).getSelectedRows().length > 0)) {
         boolean isSelectedSingleRow = (((BrowserTable) c).getSelectedRows().length == 1);
-        try {
-          boolean isAuthorNull =
-              (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getAuthor()));
-          boolean isCircleNull =
-              (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getCircle()));
-          searchMenu.setEnabled(isSelectedSingleRow);
-          searchSameAuthor.setEnabled(isAuthorNull);
-          searchSameAuthorNW.setEnabled(isAuthorNull);
-          searchSameCircle.setEnabled(isCircleNull);
-          searchSameCircleNW.setEnabled(isCircleNull);
-          searchSameTitle.setEnabled(true);
-          searchSameTitleNW.setEnabled(true);
-          copyMenu.setEnabled(isSelectedSingleRow);
-          copyCircle.setEnabled(isCircleNull);
-          copyAuthor.setEnabled(isAuthorNull);
-          openFilerAction.setEnabled(isSelectedSingleRow);
-          super.show(c, x, y);
-        } catch (SQLException e) {
-          // TODO 自動生成された catch ブロック
-          e.printStackTrace();
-        }
+        boolean isAuthorNull =
+            (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getAuthor()));
+        boolean isCircleNull =
+            (Objects.nonNull(((BrowserTable) c).getEntries().get(0).getCircle()));
+        searchMenu.setEnabled(isSelectedSingleRow);
+        searchSameAuthor.setEnabled(isAuthorNull);
+        searchSameAuthorNW.setEnabled(isAuthorNull);
+        searchSameCircle.setEnabled(isCircleNull);
+        searchSameCircleNW.setEnabled(isCircleNull);
+        searchSameTitle.setEnabled(true);
+        searchSameTitleNW.setEnabled(true);
+        copyMenu.setEnabled(isSelectedSingleRow);
+        copyCircle.setEnabled(isCircleNull);
+        copyAuthor.setEnabled(isAuthorNull);
+        openFilerAction.setEnabled(isSelectedSingleRow);
+        super.show(c, x, y);
       }
     }
-
   }
 
   class SearchInThis extends AbstractAction {
@@ -224,27 +209,22 @@ public class BrowserTable extends ExtendedTable {
     @Override
     public void actionPerformed(ActionEvent e) {
       String queryWord;
-      try {
-        switch (fieldName) {
-          case "author":
-            queryWord = browserTable.getEntries().get(0).getAuthor();
-            break;
-          case "circle":
-            queryWord = browserTable.getEntries().get(0).getCircle();
-            break;
-          case "title":
-            queryWord = browserTable.getEntries().get(0).getTitle();
-            break;
-          default:
-            queryWord = "";
-        }
-        String sql =
-            "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
-        refresh(sql);
-      } catch (SQLException e1) {
-        // TODO 自動生成された catch ブロック
-        e1.printStackTrace();
+      switch (fieldName) {
+        case "author":
+          queryWord = browserTable.getEntries().get(0).getAuthor();
+          break;
+        case "circle":
+          queryWord = browserTable.getEntries().get(0).getCircle();
+          break;
+        case "title":
+          queryWord = browserTable.getEntries().get(0).getTitle();
+          break;
+        default:
+          queryWord = "";
       }
+      String sql =
+          "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
+      refresh(sql);
     }
 
   }
@@ -263,33 +243,29 @@ public class BrowserTable extends ExtendedTable {
     @Override
     public void actionPerformed(ActionEvent e) {
       String queryWord;
-      try {
-        switch (fieldName) {
-          case "author":
-            queryWord = browserTable.getEntries().get(0).getAuthor();
-            break;
-          case "circle":
-            queryWord = browserTable.getEntries().get(0).getCircle();
-            break;
-          case "title":
-            queryWord = browserTable.getEntries().get(0).getTitle();
-            break;
-          default:
-            queryWord = "";
-        }
-        String sql =
-            "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
-        BrowserWindow browserWindow =
-            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
-        BrowserWindow newWindow = new BrowserWindow(main);
-        main.listBrowserWindows.add(newWindow);
-        newWindow.refreshTable(sql);
-        newWindow.setLocationCascadeOn(browserWindow);
-        newWindow.setSize(new Dimension(browserWindow.getWidth(), newWindow.getHeight()));
-        newWindow.setVisible(true);
-      } catch (Exception e1) {
-        // TODO: handle exception
+      switch (fieldName) {
+        case "author":
+          queryWord = browserTable.getEntries().get(0).getAuthor();
+          break;
+        case "circle":
+          queryWord = browserTable.getEntries().get(0).getCircle();
+          break;
+        case "title":
+          queryWord = browserTable.getEntries().get(0).getTitle();
+          break;
+        default:
+          queryWord = "";
       }
+      String sql =
+          "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
+      BrowserWindow browserWindow =
+          (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
+      BrowserWindow newWindow = new BrowserWindow(main);
+      main.listBrowserWindows.add(newWindow);
+      newWindow.refreshTable(sql);
+      newWindow.setLocationCascadeOn(browserWindow);
+      newWindow.setSize(new Dimension(browserWindow.getWidth(), newWindow.getHeight()));
+      newWindow.setVisible(true);
     }
   }
 
@@ -307,89 +283,94 @@ public class BrowserTable extends ExtendedTable {
     @Override
     public void actionPerformed(ActionEvent e) {
       String stringToCopy;
-      try {
-        switch (fieldName) {
-          case "author":
-            stringToCopy = browserTable.getEntries().get(0).getAuthor();
-            break;
-          case "circle":
-            stringToCopy = browserTable.getEntries().get(0).getCircle();
-            break;
-          case "title":
-            stringToCopy = browserTable.getEntries().get(0).getTitle();
-            break;
-          case "path":
-            stringToCopy = browserTable.getEntries().get(0).getPath().toString();
-            break;
-          default:
-            stringToCopy = null;
-        }
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        // 通常なら文字列がnullの場合はコピーしないという処理を入れるべきところだが、ここではnullの場合は
-        // メニューアイテムが無効化されるのでそのまま
-        clipboard.setContents(new StringSelection(stringToCopy), null);
-      } catch (SQLException ex) {
-        // TODO: handle exception
+      switch (fieldName) {
+        case "author":
+          stringToCopy = browserTable.getEntries().get(0).getAuthor();
+          break;
+        case "circle":
+          stringToCopy = browserTable.getEntries().get(0).getCircle();
+          break;
+        case "title":
+          stringToCopy = browserTable.getEntries().get(0).getTitle();
+          break;
+        case "path":
+          stringToCopy = browserTable.getEntries().get(0).getPath().toString();
+          break;
+        default:
+          stringToCopy = null;
       }
+      Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+      // 通常なら文字列がnullの場合はコピーしないという処理を入れるべきところだが、ここではnullの場合は
+      // メニューアイテムが無効化されるのでそのまま
+      clipboard.setContents(new StringSelection(stringToCopy), null);
     }
 
   }
 
-  private ArrayList<Entry> getEntries() throws SQLException {
+  private ArrayList<Entry> getEntries() {
     ArrayList<Entry> listEntries = new ArrayList<Entry>();
     Entry entry;
 
     for (Object object : getSelectedColumnValues("ID")) {
       Integer dbRowID = (Integer) object;
       String sql = "select rowid, * from magdb where rowid = " + String.valueOf(dbRowID) + ";";
-      Connection connection = DriverManager.getConnection(main.conArg);
-      Statement statement = connection.createStatement();
-      ResultSet resultSet = statement.executeQuery(sql);
-      while (resultSet.next()) {
-        entry = new Entry(resultSet);
-        listEntries.add(entry);
+      try {
+        Connection connection = DriverManager.getConnection(main.conArg);
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql);
+        while (resultSet.next()) {
+          entry = new Entry(resultSet);
+          listEntries.add(entry);
+        }
+        resultSet.close();
+        statement.close();
+        connection.close();
+      } catch (SQLException e) {
+        BrowserWindow browserWindow =
+            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
+        Util.showErrorMessage(browserWindow, e, sql);
+        e.printStackTrace();
+        return null;
       }
-      resultSet.close();
-      statement.close();
-      connection.close();
     }
     return listEntries;
 
   }
 
-  // public void refresh(ResultSet resultSet) throws SQLException {
-  public void refresh(String sql) throws SQLException {
+  public void refresh(String sql) {
 
-    DefaultTableModel model = (DefaultTableModel) this.getModel();
+    try {
+      DefaultTableModel model = (DefaultTableModel) this.getModel();
+      model.setRowCount(0);
 
-    // 全ての行を消去
-    // for (int idx = model.getRowCount() - 1; idx >= 0; idx--) {
-    // model.removeRow(idx);
-    // }
-    model.setRowCount(0);
+      ArrayList<Object[]> listOfArray = new ArrayList<Object[]>();
+      Object[] row;
 
-    ArrayList<Object[]> listOfArray = new ArrayList<Object[]>();
-    Object[] row;
+      Connection connection = DriverManager.getConnection(main.conArg);
+      Statement statement = connection.createStatement();
+      ResultSet resultSet = statement.executeQuery(sql);
+      while (resultSet.next()) {
+        Entry entry = new Entry(resultSet);
+        row = entry.getRowData();
+        listOfArray.add(row);
+      }
+      resultSet.close();
+      statement.close();
+      connection.close();
 
-    Connection connection = DriverManager.getConnection(main.conArg);
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery(sql);
-    while (resultSet.next()) {
-      Entry entry = new Entry(resultSet);
-      row = entry.getRowData();
-      listOfArray.add(row);
+      for (Object[] data : listOfArray) {
+        model.addRow(data);
+      }
+
+      // 各列が持つデータのクラスに応じたソーターを設定(これをやらないと、Integerをもつ列のソート結果が 1 10 9 の順(Stringとしてのソート)になる)
+      TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+      this.setRowSorter(sorter);
+    } catch (SQLException e) {
+      BrowserWindow browserWindow =
+          (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
+      Util.showErrorMessage(browserWindow, e, sql);
+      e.printStackTrace();
     }
-    resultSet.close();
-    statement.close();
-    connection.close();
-
-    for (Object[] data : listOfArray) {
-      model.addRow(data);
-    }
-
-    // 各列が持つデータのクラスに応じたソーターを設定(これをやらないと、Integerをもつ列のソート結果が 1 10 9 の順(Stringとしてのソート)になる)
-    TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
-    this.setRowSorter(sorter);
 
   }
 
