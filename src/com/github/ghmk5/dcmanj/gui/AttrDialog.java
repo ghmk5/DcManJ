@@ -3,7 +3,6 @@ package com.github.ghmk5.dcmanj.gui;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +27,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -114,65 +114,67 @@ public class AttrDialog extends JDialog {
     adultButtonGroup.add(adultFalseRB);
     innerBox.add(adultFalseRB);
     innerBox.setBorder(new TitledBorder("成人向けフラグ"));
+    box.add(Box.createHorizontalGlue());
 
+    int fullWidth = 32;
     box = Box.createHorizontalBox();
     panel.add(box);
-    circleField = new ExtendedField(18);
+    circleField = new ExtendedField(fullWidth / 2);
     circleField.setBorder(new TitledBorder("サークル"));
     box.add(circleField);
-    authorField = new ExtendedField(18);
+    authorField = new ExtendedField(fullWidth / 2);
     authorField.setBorder(new TitledBorder("著者"));
     box.add(authorField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    titleField = new ExtendedField(36);
+    titleField = new ExtendedField(fullWidth);
     titleField.setBorder(new TitledBorder("タイトル"));
     box.add(titleField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    subTitleField = new ExtendedField(36);
+    subTitleField = new ExtendedField(fullWidth);
     subTitleField.setBorder(new TitledBorder("サブタイトル"));
     box.add(subTitleField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    volumeField = new ExtendedField(9);
+    volumeField = new ExtendedField(fullWidth / 4);
     volumeField.setBorder(new TitledBorder("巻号"));
     box.add(volumeField);
-    issueField = new ExtendedField(9);
+    issueField = new ExtendedField(fullWidth / 4);
     issueField.setBorder(new TitledBorder("issue"));
     box.add(issueField);
-    pagesField = new JTextField(9);
+    pagesField = new JTextField(fullWidth / 4);
     pagesField.setBorder(new TitledBorder("頁数"));
     box.add(pagesField);
-    sizeField = new JTextField(9);
+    sizeField = new JTextField(fullWidth / 4);
     sizeField.setBorder(new TitledBorder("サイズ(MB)"));
     box.add(sizeField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    noteField = new ExtendedField(36);
+    noteField = new ExtendedField(fullWidth);
     noteField.setBorder(new TitledBorder("備考"));
     noteField.setComponentPopupMenu(new NoteFieldPopupMenu());
     box.add(noteField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    originalField = new ExtendedField(18);
+    originalField = new ExtendedField(fullWidth / 2);
     originalField.setBorder(new TitledBorder("元ネタ"));
     box.add(originalField);
-    releaseField = new ExtendedField(18);
+    releaseField = new ExtendedField(fullWidth / 2);
     releaseField.setBorder(new TitledBorder("配布イベント"));
     box.add(releaseField);
 
     box = Box.createHorizontalBox();
     panel.add(box);
-    dateField = new JTextField(18);
+    dateField = new JTextField(fullWidth / 2);
     dateField.setBorder(new TitledBorder("日付"));
     box.add(dateField);
-    pathField = new JTextField(18);
+    pathField = new JTextField(fullWidth / 2);
     pathField.setBorder(new TitledBorder("保存パス"));
     box.add(pathField);
 
@@ -185,7 +187,19 @@ public class AttrDialog extends JDialog {
 
     panel = new JPanel();
     getContentPane().add(panel, BorderLayout.SOUTH);
-    panel.setLayout(new FlowLayout(FlowLayout.TRAILING));
+    panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+    panel.setBorder(new EmptyBorder(2, 2, 2, 2));
+    JButton reloadSizeButton = new JButton("頁数/サイズ再読込");
+    reloadSizeButton.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        // TODO 自動生成されたメソッド・スタブ
+
+      }
+    });
+    panel.add(reloadSizeButton);
+    panel.add(Box.createHorizontalGlue());
     JButton cancelButton = new JButton("Cancel");
     cancelButton.addActionListener(new ActionListener() {
 
@@ -202,7 +216,6 @@ public class AttrDialog extends JDialog {
     addWindowListener(new AttrDialogListner());
 
     pack();
-    setResizable(false);
   }
 
   // 引数として与えられたリスト内Entryの値をコンテナに反映させる
@@ -305,6 +318,7 @@ public class AttrDialog extends JDialog {
     setTFValue(pathList, pathField);
     if (generatedFileNameList.size() == 1) {
       generatedFileNameLabel.setText(generatedFileNameList.get(0));
+      generatedFileNameLabel.setToolTipText(generatedFileNameList.get(0));
     } else {
       generatedFileNameLabel.setText("--ununified values--");
     }
@@ -314,6 +328,7 @@ public class AttrDialog extends JDialog {
     sizeField.setEnabled(false);
     pathField.setEnabled(false);
 
+    pack();
 
   }
 
