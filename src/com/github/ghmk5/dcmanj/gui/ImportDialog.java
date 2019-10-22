@@ -377,10 +377,8 @@ public class ImportDialog extends JDialog {
     String[] valueStrings = new String[values.length];
     for (int i = 0; i < values.length; i++) {
       if (values[i] instanceof String) {
-        // valueStrings[i] = TestInsert.quote("\'", (String) values[i]);
         valueStrings[i] = "\'" + (String) values[i] + "\'";
       } else if (values[i] instanceof Boolean) {
-        // valueStrings[i] = TestInsert.quote("\'", String.valueOf(values[i]));
         valueStrings[i] = "\'" + String.valueOf(values[i]) + "\'";
       } else {
         valueStrings[i] = String.valueOf(values[i]);
