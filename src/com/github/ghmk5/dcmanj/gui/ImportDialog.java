@@ -284,7 +284,7 @@ public class ImportDialog extends JDialog {
       entryList.add(entryMap.get((String) currentFileName));
     }
     AttrDialog attrDialog = new AttrDialog(this, entryList);
-    Util.setRect(attrDialog, appInfo.getRectAttr());
+    attrDialog.setLocation(appInfo.getRectAttr().getLocation());
     attrDialog.setModal(true);
     attrDialog.setVisible(true);
 

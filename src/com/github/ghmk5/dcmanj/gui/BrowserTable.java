@@ -180,21 +180,9 @@ public class BrowserTable extends ExtendedTable {
           BrowserWindow browserWindow =
               (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
           AttrDialog attrDialog = new AttrDialog(browserWindow, entryList);
-          Util.setRect(attrDialog, browserTable.main.appInfo.getRectAttr());
+          attrDialog.setLocation(main.appInfo.getRectAttr().getLocation());
           attrDialog.setModal(true);
           attrDialog.setVisible(true);
-
-          // AttrDialogから制御が戻ってきたら、entryListに含まれる要素のうち、変更があったものをリストアップする
-
-          // UpdateDBThread updateDBThread = new UpdateDBThread(entryList);
-          // updateDBThread.start();
-          // try {
-          // updateDBThread.join();
-          // updateSelectedRows();
-          // } catch (InterruptedException exception) {
-          // System.out.println("UpdateDBThreadがinterruptされた");
-          // exception.printStackTrace();
-          // }
           updateDB(entryList);
           updateSelectedRows();
         }
