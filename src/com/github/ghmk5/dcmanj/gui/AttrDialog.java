@@ -392,6 +392,8 @@ public class AttrDialog extends JDialog {
           entry.setAdult(true);
         } else if (adultFalseRB.isSelected()) {
           entry.setAdult(false);
+        } else {
+          entry.setAdult(null);
         }
         string = circleField.getText();
         if (string.equals("")) {
