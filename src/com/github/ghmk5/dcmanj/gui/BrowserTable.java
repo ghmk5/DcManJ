@@ -23,7 +23,9 @@ import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.main.DcManJ;
@@ -79,7 +81,7 @@ public class BrowserTable extends ExtendedTable {
     this.setModel(model);
     this.setRowSorter(new TableRowSorter<>((DefaultTableModel) this.getModel()));
 
-    // TableModelには入っているが表示しない列 -- 直接インデックスで指定すると、表示しない列の二つ目以降で番号がずれるので分かりにくくなるので注意
+    // TableModelには入っているが表示しない列 -- 直接インデックスで指定すると、表示しない列の二つ目以降で番号がずれて分かりにくくなるので注意
     String[] columnsToHide =
         {"サークル", "著者", "タイトル(素)", "副題", "巻号", "issue", "備考", "パス", "日付", "元ネタ", "発刊"};
     for (String columnName : columnsToHide) {
@@ -129,6 +131,7 @@ public class BrowserTable extends ExtendedTable {
     Action showInFiler;
     Action setValues;
     Action openFilerAction;
+    Action openAttrDialogAction;
 
     public TableContextMenu(BrowserTable browserTable) {
       super();
@@ -169,6 +172,34 @@ public class BrowserTable extends ExtendedTable {
         }
       };
       add(openFilerAction);
+      openAttrDialogAction = new AbstractAction("属性を設定...") {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          ArrayList<Entry> entryList = browserTable.getEntries();
+          BrowserWindow browserWindow =
+              (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
+          AttrDialog attrDialog = new AttrDialog(browserWindow, entryList);
+          Util.setRect(attrDialog, browserTable.main.appInfo.getRectAttr());
+          attrDialog.setModal(true);
+          attrDialog.setVisible(true);
+
+          // AttrDialogから制御が戻ってきたら、entryListに含まれる要素のうち、変更があったものをリストアップする
+
+          // UpdateDBThread updateDBThread = new UpdateDBThread(entryList);
+          // updateDBThread.start();
+          // try {
+          // updateDBThread.join();
+          // updateSelectedRows();
+          // } catch (InterruptedException exception) {
+          // System.out.println("UpdateDBThreadがinterruptされた");
+          // exception.printStackTrace();
+          // }
+          updateDB(entryList);
+          updateSelectedRows();
+        }
+      };
+      add(openAttrDialogAction);
     }
 
     @Override
@@ -307,6 +338,11 @@ public class BrowserTable extends ExtendedTable {
 
   }
 
+  /**
+   * 選択された行に対応するEntryのリストを返す
+   *
+   * @return
+   */
   private ArrayList<Entry> getEntries() {
     ArrayList<Entry> listEntries = new ArrayList<Entry>();
     Entry entry;
@@ -337,6 +373,111 @@ public class BrowserTable extends ExtendedTable {
 
   }
 
+  /**
+   * 所与のリストに含まれるEntryについてデータベースレコードとの相違を調べ、<BR>
+   * 相違がある場合はレコードを更新する
+   *
+   * @param entryList
+   */
+  private void updateDB(ArrayList<Entry> entryList) {
+    String sql;
+    Entry entryInRecord;
+    ArrayList<String> setClauses;
+    Connection connection;
+    Statement statement;
+    ResultSet resultSet;
+    for (Entry entry : entryList) {
+      sql = "select rowid, * from magdb where rowid is " + String.valueOf(entry.getId()) + ";";
+      try {
+        connection = DriverManager.getConnection(main.conArg);
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(sql);
+        entryInRecord = new Entry(resultSet);
+        if (entry.isIdenticalTo(entryInRecord)) {
+          continue;
+        } else {
+          setClauses = new ArrayList<String>();
+          HashMap<String, Object> updatedValueMap = entry.getUpdatedValueMap(entryInRecord);
+          for (String columnName : updatedValueMap.keySet()) {
+            setClauses.add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
+          }
+          sql = "update magdb set "
+              + String.join(", ", setClauses.toArray(new String[setClauses.size()]));
+          sql += " where rowid = ";
+          sql += String.valueOf(entry.getId());
+          sql += ";";
+          statement.execute(sql);
+        }
+        resultSet.close();
+        statement.close();
+        connection.close();
+      } catch (SQLException e) {
+        BrowserWindow browserWindow =
+            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
+        Util.showErrorMessage(browserWindow, e, sql);
+        e.printStackTrace();
+      }
+    }
+
+  }
+
+  private void updateSelectedRows() {
+    DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
+    Integer rowID;
+    String sql = "select rowid, * from magdb where rowid = String.valueOf(rowID);";
+    Entry entry;
+    try {
+      Connection connection = DriverManager.getConnection(main.conArg);
+      Statement statement;
+      ResultSet resultSet;
+      int columnIdx;
+      TableModel model = getModel();
+
+      for (int tableRowIdx : getSelectedRows()) {
+        tableRowIdx = convertRowIndexToModel(tableRowIdx);
+        rowID = (Integer) model.getValueAt(tableRowIdx, columnModel.getColumnIndex("ID"));
+        sql = "select rowid, * from magdb where rowid = " + String.valueOf(rowID) + ";";
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(sql);
+        entry = new Entry(resultSet);
+
+        // tableで表示されているカラムのindexと、データモデルのカラムindexは異なる(場合がある)
+        // データモデルのカラム全てを表示しており、かつカラムの順番を入れ替えていない場合は一致するが、
+        // ここでやっているようにカラムの一部を非表示にしていたり、カラムの動的な入れ替えを許可していたりすると
+        // 食い違いが生じる
+        // ColumnModel.getColumnIndex()で取得するインデックスはテーブルで表示中の列順を示すものであり、
+        // TableModel.setValueAt()で指定すべきはデータモデルにおける列順であって、これを得るためには
+        // JTable.convertColumnIndexToModelメソッドで変換してやる必要がある
+        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("種別"));
+        model.setValueAt(entry.getType(), tableRowIdx, columnIdx);
+        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("成"));
+        model.setValueAt(entry.getAdult(), tableRowIdx, columnIdx);
+        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("タイトル"));
+        model.setValueAt(entry.getEntryTitle(), tableRowIdx, columnIdx);
+        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("頁数"));
+        model.setValueAt(entry.getPages(), tableRowIdx, columnIdx);
+        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("容量"));
+        model.setValueAt(String.format("%.2f", entry.getSize()), tableRowIdx, columnIdx);
+
+        resultSet.close();
+        statement.close();
+      }
+
+      connection.close();
+    } catch (SQLException e) {
+      BrowserWindow browserWindow =
+          (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
+      Util.showErrorMessage(browserWindow, e, sql);
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * 所与のSQL文でデータベースを検索し、その結果に基づいてテーブルを書き換える
+   *
+   *
+   * @param sql SELECTステートメントであり、かつ要求するカラムが rowid, * でなければならない
+   */
   public void refresh(String sql) {
 
     try {
