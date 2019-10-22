@@ -9,6 +9,7 @@ import java.text.Normalizer;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -246,7 +247,11 @@ public class Entry {
 
     id = resultSet.getInt("rowid");
     type = resultSet.getString("type");
-    adult = Boolean.valueOf(resultSet.getString("adult"));
+    if (Objects.isNull(resultSet.getString("adult"))) {
+      adult = null;
+    } else {
+      adult = Boolean.valueOf(resultSet.getString("adult"));
+    }
     circle = resultSet.getString("circle");
     author = resultSet.getString("author");
     title = resultSet.getString("title");
@@ -265,6 +270,63 @@ public class Entry {
     original = resultSet.getString("original");
     release = resultSet.getString("release");
 
+  }
+
+  /**
+   * 他のEntryインスタンスと内容を比較する<BR>
+   * 2つのEntryインスタンスのデータベース登録内容が同一となるか否か、すなわち<BR>
+   * データベース登録/参照される16個のフィールド全てが一致するか否かを示す真偽値を返す
+   *
+   * @param entry 比較対象のEntryインスタンス
+   * @return データベースレコードとして取り込んだ際に同一内容となるなら真
+   */
+  public Boolean isIdenticalTo(Entry entry) {
+    return this.getColumnValueMap().equals(entry.getColumnValueMap());
+  }
+
+  /**
+   * データベースに登録するフィールド値について所与のEntryインスタンスとの相違を調べ、<BR>
+   * 一致しないものを値に持つマップを返す
+   *
+   * @param entry 比較対象のEntryインスタンス
+   * @return データベースカラム名をキーに持つマップ
+   */
+  public HashMap<String, Object> getUpdatedValueMap(Entry entryFromDB) {
+    HashMap<String, Object> updatedValueMap = new HashMap<String, Object>();
+    HashMap<String, Object> valueMap = getColumnValueMap();
+    HashMap<String, Object> dBEntryValueMap = entryFromDB.getColumnValueMap();
+    for (String columnName : valueMap.keySet()) {
+      if (!Util.isIdentical(valueMap.get(columnName), dBEntryValueMap.get(columnName))) {
+        updatedValueMap.put(columnName, valueMap.get(columnName));
+      }
+    }
+    return updatedValueMap;
+  }
+
+  /**
+   * データベースカラム名と対応する値を紐付けたマップを返す
+   *
+   * @return HashMap<String データベースカラム名, Object 値> columnValueMap
+   */
+  public HashMap<String, Object> getColumnValueMap() {
+    HashMap<String, Object> columnValueMap = new HashMap<String, Object>();
+    columnValueMap.put("rowid", id);
+    columnValueMap.put("type", type);
+    columnValueMap.put("adult", adult);
+    columnValueMap.put("circle", circle);
+    columnValueMap.put("author", author);
+    columnValueMap.put("title", title);
+    columnValueMap.put("subtitle", subtitle);
+    columnValueMap.put("volume", volume);
+    columnValueMap.put("issue", issue);
+    columnValueMap.put("note", note);
+    columnValueMap.put("pages", pages);
+    columnValueMap.put("size", size);
+    columnValueMap.put("path", path);
+    columnValueMap.put("date", date);
+    columnValueMap.put("original", original);
+    columnValueMap.put("release", release);
+    return columnValueMap;
   }
 
   // フラグ値からエントリ種別を判定してtypeフィールドに代入
@@ -622,6 +684,9 @@ public class Entry {
     }
     if (Objects.nonNull(issue)) {
       list.add(issue);
+    }
+    if (Objects.nonNull(note)) {
+      list.add("(" + String.join(")(", note.split(",")) + ")");
     }
     String outString = String.join(" ", list.toArray(new String[list.size()]));
     return outString;
