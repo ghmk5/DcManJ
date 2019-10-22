@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -355,6 +356,34 @@ public class Util {
   }
 
   /**
+   * Entryのデータベースフィールドに適用するフィールド値をSQLのINSERT文やUPDATE文で使えるようにクォートして返す
+   *
+   * @param object Entryクラスのフィールド値
+   * @return objectのクラスに応じて適切にクォートされたString値
+   * @throws IllegalArgumentException 使用されないはずのオブジェクトクラスが与えられたときに発生
+   */
+  public static String quoteForSQL(Object object) throws IllegalArgumentException {
+    String result;
+    if (object instanceof String) {
+      result = "'" + (String) object + "'";
+    } else if (object instanceof Boolean) {
+      result = "'" + String.valueOf(object) + "'";
+    } else if ((object instanceof Integer) || (object instanceof Double)) {
+      result = String.valueOf(object);
+    } else if (object instanceof Path) {
+      result = "'" + ((Path) object).toFile().getAbsolutePath() + "'";
+    } else if (object instanceof OffsetDateTime) {
+      result = "'" + ((OffsetDateTime) object).format(DTF) + "'";
+    } else if (Objects.isNull(object)) {
+      result = "null";
+    } else {
+      throw new IllegalArgumentException(
+          "想定されていないクラスのインスタンスが与えられた: " + object.getClass().toString());
+    }
+    return result;
+  }
+
+  /**
    * Runtime.exec()で発生したIOException、またはSQLステートメント実行時に発生したSQLExceptionに対する<BR>
    * エラーメッセージを表示する
    *
@@ -380,7 +409,7 @@ public class Util {
       Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
     } else if (e instanceof SQLException) {
       errorType = "SQLエラー";
-      firstHalfOfMessage = "下記のSQL文の実行時にエラーが発生しました";
+      firstHalfOfMessage = "下記のSQL文の実行時にエラー(" + e.getMessage() + ")が発生しました";
       secondHalfOfMessage = "SQL文をクリップボードにコピーしました";
       message = String.join("\n\n",
           (new String[] {firstHalfOfMessage, "  " + string, secondHalfOfMessage}));
