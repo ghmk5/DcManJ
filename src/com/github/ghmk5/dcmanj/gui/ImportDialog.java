@@ -264,15 +264,16 @@ public class ImportDialog extends JDialog {
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
     String fileName;
     Entry entry;
+    int columnIdx;
     for (int tableRowIdx : table.getSelectedRows()) {
       tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
       fileName = (String) table.getModel().getValueAt(tableRowIdx,
           columnModel.getColumnIndex("Current Name"));
       entry = entryMap.get(fileName);
-      table.getModel().setValueAt(entry.getOriginal(), tableRowIdx,
-          columnModel.getColumnIndex("original"));
-      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx,
-          columnModel.getColumnIndex("Name to Store"));
+      columnIdx = table.convertColumnIndexToModel(columnModel.getColumnIndex("original"));
+      table.getModel().setValueAt(entry.getOriginal(), tableRowIdx, columnIdx);
+      columnIdx = table.convertColumnIndexToModel(columnModel.getColumnIndex("Name to Store"));
+      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx, columnIdx);
     }
   }
 
