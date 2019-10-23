@@ -697,6 +697,7 @@ public class Entry {
       list.add(volume);
     }
     if (Objects.nonNull(subtitle)) {
+      list.add(subtitle);
     }
     if (Objects.nonNull(issue)) {
       list.add(issue);
