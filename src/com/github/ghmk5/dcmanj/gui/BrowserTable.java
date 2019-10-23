@@ -381,6 +381,8 @@ public class BrowserTable extends ExtendedTable {
         statement = connection.createStatement();
         resultSet = statement.executeQuery(sql);
         entryInRecord = new Entry(resultSet);
+        resultSet.close();
+        statement.close();
         if (entry.isIdenticalTo(entryInRecord)) {
           continue;
         } else {
@@ -394,10 +396,10 @@ public class BrowserTable extends ExtendedTable {
           sql += " where rowid = ";
           sql += String.valueOf(entry.getId());
           sql += ";";
+          statement = connection.createStatement();
           statement.execute(sql);
+          statement.close();
         }
-        resultSet.close();
-        statement.close();
         connection.close();
       } catch (SQLException e) {
         BrowserWindow browserWindow =
