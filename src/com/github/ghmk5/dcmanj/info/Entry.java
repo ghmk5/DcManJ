@@ -212,29 +212,8 @@ public class Entry {
       adult = true;
     }
 
-    // サイズをセット
-    if (file.isFile()) {
-      size = file.length() / 1024d / 1024d;
-      if (file.getName().matches(".+\\.[Zz][Ii][Pp]$")) {
-        try {
-          ZipFile zipFile = new ZipFile(file);
-          pages = 0;
-          zipFile.stream().filter(x -> !x.isDirectory()).forEach(e -> {
-            pages++;
-          });
-          zipFile.close();
-        } catch (Exception e) {
-          JOptionPane.showMessageDialog(null,
-              "zipファイル " + file.getName() + " の内容を読み取れません(暗号化ファイル?)");
-          System.out.println(file.getName() + " has unreadable entries inside (encrytpted zip?).");
-        }
-      }
-    } else if (file.isDirectory()) {
-      size = FileUtils.sizeOfDirectory(file) / 1024d / 1024d;
-      pages = file.listFiles().length;
-    } else {
-      throw new IllegalArgumentException("Entryのコンストラクタ引数としてファイルでもディレクトリでもないオブジェクトが渡された");
-    }
+    // 頁数とサイズをセット
+    acquireSizeAndPages();
   }
 
   /**
@@ -476,6 +455,42 @@ public class Entry {
     string = string.replaceFirst("[～~-―－]$", "");
     string = string.replaceAll(" +", " ");
     return string;
+  }
+
+  /**
+   * 保存されたエントリから容量とファイル数を取得してフィールドにセットする
+   *
+   */
+  public void acquireSizeAndPages() {
+    File file = this.path.toFile();
+    if (file.isFile()) {
+      this.size = file.length() / 1024d / 1024d;
+      if (file.getName().matches(".+\\.[Zz][Ii][Pp]$")) {
+        try {
+          ZipFile zipFile = new ZipFile(file);
+          this.pages = 0;
+          zipFile.stream().filter(x -> !x.isDirectory()).forEach(e -> {
+            this.pages++;
+          });
+          zipFile.close();
+        } catch (Exception e) {
+          JOptionPane.showMessageDialog(null,
+              "zipファイル " + file.getName() + " の内容を読み取れません(暗号化ファイル?)", "エラー",
+              JOptionPane.ERROR_MESSAGE);
+          e.printStackTrace();
+        }
+      } else {
+        this.pages = 1;
+      }
+    } else if (file.isDirectory()) {
+      this.size = FileUtils.sizeOfDirectory(file) / 1024d / 1024d;
+      this.pages = file.listFiles().length;
+    } else {
+      JOptionPane.showMessageDialog(null, "Entry.pathの内容にファイルでもディレクトリでもないエントリのパスが入っている", "エラー",
+          JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+
   }
 
   /**

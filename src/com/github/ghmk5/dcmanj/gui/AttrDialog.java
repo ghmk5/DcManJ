@@ -189,16 +189,36 @@ public class AttrDialog extends JDialog {
     getContentPane().add(panel, BorderLayout.SOUTH);
     panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
     panel.setBorder(new EmptyBorder(2, 2, 2, 2));
-    JButton reloadSizeButton = new JButton("頁数/サイズ再読込");
-    reloadSizeButton.addActionListener(new ActionListener() {
+    JButton acquireSizeAndPagesButton = new JButton("頁数/サイズ再読込");
+    acquireSizeAndPagesButton.addActionListener(new ActionListener() {
 
       @Override
       public void actionPerformed(ActionEvent e) {
+        ArrayList<Integer> pagesList = new ArrayList<Integer>();
+        ArrayList<Double> sizeList = new ArrayList<Double>();
+        for (Entry entry : entryList) {
+          entry.acquireSizeAndPages();
+          pagesList.add(entry.getPages());
+          sizeList.add(entry.getSize());
+        }
+        pagesList = new ArrayList<Integer>(new LinkedHashSet<>(pagesList));
+        sizeList = new ArrayList<Double>(new LinkedHashSet<>(sizeList));
+        if (pagesList.size() == 1) {
+          pagesField.setText(String.valueOf(pagesList.get(0)));
+        } else {
+          pagesField.setText("--ununified values--");
+        }
+        if (sizeList.size() == 1) {
+          sizeField.setText(String.format("%.2f", sizeList.get(0)));
+        } else {
+          sizeField.setText("--ununified values--");
+        }
+
         // TODO 自動生成されたメソッド・スタブ
 
       }
     });
-    panel.add(reloadSizeButton);
+    panel.add(acquireSizeAndPagesButton);
     panel.add(Box.createHorizontalGlue());
     JButton cancelButton = new JButton("Cancel");
     cancelButton.addActionListener(new ActionListener() {
@@ -214,6 +234,11 @@ public class AttrDialog extends JDialog {
     panel.add(applyButton);
 
     addWindowListener(new AttrDialogListner());
+
+    // 以下のフィールドは変更不可(applyしたときもEntryに反映させない)
+    pagesField.setEnabled(false);
+    sizeField.setEnabled(false);
+    pathField.setEnabled(false);
 
     pack();
   }
@@ -322,11 +347,6 @@ public class AttrDialog extends JDialog {
     } else {
       generatedFileNameLabel.setText("--ununified values--");
     }
-
-    // 以下のフィールドは変更不可(allpyしたときもEntryに反映させない)
-    pagesField.setEnabled(false);
-    sizeField.setEnabled(false);
-    pathField.setEnabled(false);
 
     pack();
 
