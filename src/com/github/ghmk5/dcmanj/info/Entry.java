@@ -463,34 +463,35 @@ public class Entry {
    */
   public void acquireSizeAndPages() {
     File file = this.path.toFile();
+    int newPages;
+    double newSize;
     if (file.isFile()) {
-      this.size = file.length() / 1024d / 1024d;
+      newSize = file.length() / 1024d / 1024d;
       if (file.getName().matches(".+\\.[Zz][Ii][Pp]$")) {
         try {
           ZipFile zipFile = new ZipFile(file);
-          this.pages = 0;
-          zipFile.stream().filter(x -> !x.isDirectory()).forEach(e -> {
-            this.pages++;
-          });
+          newPages = (int) zipFile.stream().filter(x -> !x.isDirectory()).count();
           zipFile.close();
         } catch (Exception e) {
           JOptionPane.showMessageDialog(null,
               "zipファイル " + file.getName() + " の内容を読み取れません(暗号化ファイル?)", "エラー",
               JOptionPane.ERROR_MESSAGE);
           e.printStackTrace();
+          return;
         }
       } else {
-        this.pages = 1;
+        newPages = 1;
       }
     } else if (file.isDirectory()) {
-      this.size = FileUtils.sizeOfDirectory(file) / 1024d / 1024d;
-      this.pages = file.listFiles().length;
+      newSize = FileUtils.sizeOfDirectory(file) / 1024d / 1024d;
+      newPages = file.listFiles().length;
     } else {
       JOptionPane.showMessageDialog(null, "Entry.pathの内容にファイルでもディレクトリでもないエントリのパスが入っている", "エラー",
           JOptionPane.ERROR_MESSAGE);
       return;
     }
-
+    this.pages = newPages;
+    this.size = newSize;
   }
 
   /**
