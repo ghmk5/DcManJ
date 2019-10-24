@@ -370,7 +370,7 @@ public class BrowserTable extends ExtendedTable {
   private void updateDB(ArrayList<Entry> entryList) {
     String sql;
     Entry entryInRecord;
-    ArrayList<String> setClauses;
+    ArrayList<String> setPredicates;
     Connection connection;
     Statement statement;
     ResultSet resultSet;
@@ -386,13 +386,13 @@ public class BrowserTable extends ExtendedTable {
         if (entry.isIdenticalTo(entryInRecord)) {
           continue;
         } else {
-          setClauses = new ArrayList<String>();
+          setPredicates = new ArrayList<String>();
           HashMap<String, Object> updatedValueMap = entry.getUpdatedValueMap(entryInRecord);
           for (String columnName : updatedValueMap.keySet()) {
-            setClauses.add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
+            setPredicates.add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
           }
           sql = "update magdb set "
-              + String.join(", ", setClauses.toArray(new String[setClauses.size()]));
+              + String.join(", ", setPredicates.toArray(new String[setPredicates.size()]));
           sql += " where rowid = ";
           sql += String.valueOf(entry.getId());
           sql += ";";
