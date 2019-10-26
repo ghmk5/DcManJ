@@ -22,7 +22,9 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 /**
- * 拡張版JTable カラムヘッダクリックでソート可能 カラムヘッダ境界ダブルクリックで列幅調整可能 マウスオーバーでセル内容をToolTipText表示 これら以外にOverrideしたい場合は
+ * 拡張版JTable カラムヘッダクリックでソート可能 カラムヘッダ境界ダブルクリックで列幅調整可能<BR>
+ * マウスオーバーでセル内容をToolTipText表示 これら以外にOverrideしたい場合は
+ *
  * ExtendedTable exTable = new ExtendedTable(dataModel) {
  *
  * @Override public boolean isCellEditable(int row, int column) { return false; } }; とかやる
