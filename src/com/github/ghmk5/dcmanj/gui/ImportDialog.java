@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -188,6 +189,9 @@ public class ImportDialog extends JDialog {
     Entry entry;
     ArrayList<String> fileNamesCouldntRead = new ArrayList<String>();
     for (File srcFile : imptDir.listFiles()) {
+      if (srcFile.isHidden()) {
+        continue;
+      }
       fileName = srcFile.getName();
       try {
         entry = new Entry(srcFile, appInfo);
@@ -282,6 +286,10 @@ public class ImportDialog extends JDialog {
     ArrayList<Entry> entryList = new ArrayList<Entry>();
     for (Object currentFileName : table.getSelectedColumnValues("Current Name")) {
       entryList.add(entryMap.get((String) currentFileName));
+    }
+    entryList.removeAll(Collections.singleton(null));
+    if (entryList.size() < 1) {
+      return;
     }
     AttrDialog attrDialog = new AttrDialog(this, entryList);
     attrDialog.setLocation(appInfo.getRectAttr().getLocation());
