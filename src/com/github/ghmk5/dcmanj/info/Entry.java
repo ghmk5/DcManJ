@@ -23,33 +23,93 @@ import com.github.ghmk5.dcmanj.util.Util;
 public class Entry {
 
   // 書誌情報
-  Integer id;
-  String type;
-  Boolean adult;
-  String circle;
-  String author;
-  String title;
-  String subtitle;
-  String volume;
-  String issue;
-  String note;
-  Integer pages;
-  Double size;
-  Path path;
-  OffsetDateTime date;
-  String original;
-  String release;
+  private Integer id;
+  private String type;
+  private Boolean adult;
+  private String circle;
+  private String author;
+  private String title;
+  private String subtitle;
+  private String volume;
+  private String issue;
+  private String note;
+  private Integer pages;
+  private Double size;
+  private Path path;
+  private OffsetDateTime date;
+  private String original;
+  private String release;
 
   // noteを生成するために使うリスト
-  ArrayList<String> noteAsList;
+  private ArrayList<String> noteAsList;
 
   // タイプの判断材料を入れておくための真偽値
-  Boolean isDoujinshi;
-  Boolean isComic;
-  Boolean isMagazine;
-  Boolean isNovel;
+  private Boolean isDoujinshi;
+  private Boolean isComic;
+  private Boolean isMagazine;
+  private Boolean isNovel;
 
-  AppInfo appInfo;
+  // Fileを引数にとるコンストラクタ内で使用
+  private AppInfo appInfo;
+
+  private static HashMap<String, String> columnNameMap;
+  private static HashMap<String, String> tagNameMap;
+  private static HashMap<String, String> dataClassMap;
+
+  public static String[] COLUMN_NAMES;
+  public static String[] TAG_NAMES;
+
+  static {
+    //@formatter:off
+    String[][] strings = {
+      {"ID", "rowid", "Integer"},
+      {"種別", "type", "String"},
+      {"成人向け", "adult", "Boolean"},
+      {"サークル", "circle", "String"},
+      {"著者", "author", "String"},
+      {"タイトル", "title", "String"},
+      {"副題", "subtitle", "String"},
+      {"巻号", "volume", "String"},
+      {"issue", "issue", "String"},
+      {"備考", "note", "String"},
+      {"頁数", "pages", "Integer"},
+      {"容量", "size", "Double"},
+      {"パス", "path", "Path"},
+      {"日付", "date", "OffsetDateTime"},
+      {"元ネタ", "original", "String"},
+      {"配布イベ", "release", "String"}
+    };
+    //@formatter:on
+
+    columnNameMap = new HashMap<String, String>();
+    tagNameMap = new HashMap<String, String>();
+    dataClassMap = new HashMap<String, String>();
+
+    for (String[] row : strings) {
+      columnNameMap.put(row[0], row[1]);
+      tagNameMap.put(row[1], row[0]);
+      dataClassMap.put(row[0], row[2]);
+      dataClassMap.put(row[1], row[2]);
+    }
+
+    COLUMN_NAMES =
+        new ArrayList<String>(tagNameMap.keySet()).toArray(new String[tagNameMap.keySet().size()]);
+    TAG_NAMES = new ArrayList<String>(columnNameMap.keySet())
+        .toArray(new String[columnNameMap.keySet().size()]);
+
+  }
+
+  public static String columnNameOf(String tagName) {
+    return columnNameMap.get(tagName);
+  }
+
+  public static String tagNameOf(String columnName) {
+    return tagNameMap.get(columnName);
+  }
+
+  public static String dataClassNameOf(String name) {
+    return dataClassMap.get(name);
+  }
 
   public Entry(File file, AppInfo appInfo) throws ZipException, IOException {
 

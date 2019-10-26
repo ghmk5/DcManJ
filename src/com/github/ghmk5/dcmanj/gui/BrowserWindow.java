@@ -52,6 +52,8 @@ public class BrowserWindow extends JFrame {
   JRadioButton adultFalseRB;
   BrowserTable table;
   DefaultTableModel model;
+  JPanel advancedSearchPanel;
+  ArrayList<PredicateBox> predicateList;
 
   public BrowserWindow(DcManJ main) {
     super();
@@ -151,27 +153,20 @@ public class BrowserWindow extends JFrame {
     });
     tabPanel.add(button);
 
-    tabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
-    tabbedPane.addTab("詳細検索", tabPanel);
+    advancedSearchPanel = new JPanel();
+    advancedSearchPanel.setLayout(new BoxLayout(advancedSearchPanel, BoxLayout.X_AXIS));
+    tabbedPane.addTab("詳細検索", advancedSearchPanel);
 
-    tabPanel.add(Box.createHorizontalStrut(10));
-    String[] fieldOptions = {"著者", "サークル", "タイトル", "備考"};
-    JComboBox<String> comboBox = new JComboBox<String>(fieldOptions);
-    tabPanel.add(comboBox);
-    String[] statementOptions = {"IS", "LIKE", "GLOB"};
-    comboBox = new JComboBox<String>(statementOptions);
-    // comboBox.setFont(comboBox.getFont().deriveFont(comboBox.getFont().getSize() - 1.0f));
-    tabPanel.add(comboBox);
-    JTextField textField = new JTextField(8);
-    tabPanel.add(textField);
+    predicateList = new ArrayList<PredicateBox>();
 
-    // button = new JButton("詳細検索");
-    // button.setFont(main.tableFont);
-    // upperPanel.add(button);
+    PredicateBox predicateBox = new PredicateBox(this);
+    predicateList.add(predicateBox);
+    advancedSearchPanel.add(predicateBox);
 
-    // button = new JButton("追加...");
-    // button.setFont(main.tableFont);
-    // upperPanel.add(button);
+    AddTakePredBox addTakePredBox = new AddTakePredBox(this);
+    advancedSearchPanel.add(addTakePredBox);
+
+    advancedSearchPanel.add(Box.createHorizontalGlue());
 
     JPanel lowerPanel = new JPanel(new BorderLayout());
     panel.add(lowerPanel);
