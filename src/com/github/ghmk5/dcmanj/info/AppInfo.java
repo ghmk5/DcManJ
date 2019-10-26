@@ -20,6 +20,7 @@ public class AppInfo {
   HashMap<String, Integer> columnWidthMain;
   HashMap<String, Integer> columnWidthImpt;
   String imptDir;
+  String[] namesToBeIgnored;
   String saveDir;
   Boolean useChildDir;
   String childDirPrefix;
@@ -151,6 +152,14 @@ public class AppInfo {
 
   public void setImptDir(String imptDir) {
     this.imptDir = imptDir;
+  }
+
+  public String[] getNamesToBeIgnored() {
+    return namesToBeIgnored;
+  }
+
+  public void setNamesToBeIgnored(String[] namesToBeIgnored) {
+    this.namesToBeIgnored = namesToBeIgnored;
   }
 
   public Rectangle getRectAttr() {

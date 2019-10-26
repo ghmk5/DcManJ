@@ -82,7 +82,7 @@ public class ImportDialog extends JDialog {
     setLayout(new BorderLayout());
     JPanel panel = new JPanel(new FlowLayout());
     getContentPane().add(panel, BorderLayout.NORTH);
-    JButton reloadButton = new JButton("Reload");
+    JButton reloadButton = new JButton("再読込");
     reloadButton.addActionListener(new ActionListener() {
 
       @Override
@@ -92,9 +92,23 @@ public class ImportDialog extends JDialog {
       }
     });
     panel.add(reloadButton);
-    JButton changeDirButton = new JButton("Change Dir");
+    JButton changeDirButton = new JButton("ディレクトリ変更");
     changeDirButton.addActionListener(new ChangeDirAction());
     panel.add(changeDirButton);
+
+    JButton editIgnoreListButton = new JButton("無視リストを編集");
+    editIgnoreListButton.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        ImportDialog importDialog = (ImportDialog) SwingUtilities
+            .getAncestorOfClass(ImportDialog.class, (Component) e.getSource());
+        IgnoreListDialog ignoreListDialog = new IgnoreListDialog(importDialog, appInfo);
+        ignoreListDialog.setLocationRelativeTo(importDialog);
+        ignoreListDialog.setVisible(true);
+      }
+    });
+    panel.add(editIgnoreListButton);
 
     JCheckBox checkBox = new JCheckBox("ディレクトリはzipして保管");
     checkBox.addActionListener(new ActionListener() {
@@ -188,8 +202,15 @@ public class ImportDialog extends JDialog {
     String fileName;
     Entry entry;
     ArrayList<String> fileNamesCouldntRead = new ArrayList<String>();
+    ArrayList<String> namesToBeIgnoredList;
+    String[] namesToBeIgnored = appInfo.getNamesToBeIgnored();
+    if (Objects.nonNull(namesToBeIgnored) && namesToBeIgnored.length > 0) {
+      namesToBeIgnoredList = new ArrayList<String>(Arrays.asList(namesToBeIgnored));
+    } else {
+      namesToBeIgnoredList = new ArrayList<String>();
+    }
     for (File srcFile : imptDir.listFiles()) {
-      if (srcFile.isHidden()) {
+      if (srcFile.isHidden() || namesToBeIgnoredList.contains(srcFile.getName())) {
         continue;
       }
       fileName = srcFile.getName();
@@ -594,6 +615,7 @@ public class ImportDialog extends JDialog {
     ImportDialog importDialog;
     JMenuItem setAttr;
     JMenuItem moveLastNoteToOriginal;
+    JMenuItem addToIgnoreList;
     JMenuItem openWithViewer;
     JMenuItem showFiles;
     JMenuItem importEntries;
@@ -643,6 +665,40 @@ public class ImportDialog extends JDialog {
         }
       });
       add(moveLastNoteToOriginal);
+
+      addToIgnoreList = new JMenuItem("無視リストに追加");
+      addToIgnoreList.addActionListener(new AbstractAction() {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          String fileName;
+          ArrayList<String> namesToBeIgnoredList;
+          String[] namesToBeIgnored = appInfo.getNamesToBeIgnored();
+          if (Objects.nonNull(namesToBeIgnored)) {
+            namesToBeIgnoredList = new ArrayList<String>(Arrays.asList(namesToBeIgnored));
+          } else {
+            namesToBeIgnoredList = new ArrayList<String>();
+          }
+          for (Entry entry : getSelectedEntries()) {
+            if (Objects.isNull(entry)) {
+              continue;
+            }
+            fileName = entry.getPath().toFile().getName();
+            if (Objects.nonNull(fileName) && !fileName.equals("")) {
+              namesToBeIgnoredList.add(fileName);
+              entryMap.remove(fileName);
+            }
+          }
+          if (namesToBeIgnoredList.size() > 0) {
+            namesToBeIgnored =
+                namesToBeIgnoredList.toArray(new String[namesToBeIgnoredList.size()]);
+          }
+          appInfo.setNamesToBeIgnored(namesToBeIgnored);
+          Util.writeAppInfo(appInfo);
+          updateTable();
+        }
+      });
+      add(addToIgnoreList);
 
       addSeparator();
 
