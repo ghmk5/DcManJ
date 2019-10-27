@@ -1,5 +1,6 @@
 package com.github.ghmk5.dcmanj.gui;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -25,6 +26,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -44,6 +46,7 @@ public class BrowserTable extends ExtendedTable {
       {Integer.class, String.class, Boolean.class, String.class, String.class, String.class,
           String.class, String.class, String.class, String.class, String.class, Integer.class,
           Double.class, String.class, String.class, String.class, String.class};
+  HashMap<Integer, Entry> entryMap;
 
   {
     dbColumnNameMap = new HashMap<String, String>();
@@ -52,8 +55,33 @@ public class BrowserTable extends ExtendedTable {
     }
   }
 
+  // ファイルにアクセスできない場合は文字を灰色にする
+  @Override
+  public Component prepareRenderer(TableCellRenderer tcr, int row, int column) {
+    Component c = super.prepareRenderer(tcr, row, column);
+    Integer dbRowID = (Integer) getValueAt(row, 0);
+
+    Entry entry = entryMap.get(dbRowID);
+    Boolean ready = null;
+    if (Objects.nonNull(entry)) {
+      ready = entry.getPath().toFile().exists();
+      if (!ready) {
+        c.setForeground(Color.GRAY);
+      } else {
+        c.setForeground(getForeground());
+      }
+    } else {
+      c.setForeground(getForeground());
+    }
+    return c;
+
+  }
+
+
   public BrowserTable(DcManJ main) {
     super();
+
+    entryMap = new HashMap<Integer, Entry>();
 
     this.main = main;
     // model = new BrowserTableModel();
@@ -389,7 +417,8 @@ public class BrowserTable extends ExtendedTable {
           setPredicates = new ArrayList<String>();
           HashMap<String, Object> updatedValueMap = entry.getUpdatedValueMap(entryInRecord);
           for (String columnName : updatedValueMap.keySet()) {
-            setPredicates.add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
+            setPredicates
+                .add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
           }
           sql = "update magdb set "
               + String.join(", ", setPredicates.toArray(new String[setPredicates.size()]));
@@ -482,6 +511,7 @@ public class BrowserTable extends ExtendedTable {
       ResultSet resultSet = statement.executeQuery(sql);
       while (resultSet.next()) {
         Entry entry = new Entry(resultSet);
+        entryMap.put(entry.getId(), entry);
         row = entry.getRowData();
         listOfArray.add(row);
       }
