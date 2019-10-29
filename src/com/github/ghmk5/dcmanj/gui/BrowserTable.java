@@ -156,10 +156,9 @@ public class BrowserTable extends ExtendedTable {
     Action copyTitle;
     Action copyPath;
     JMenu manageMenu;
-    Action showInFiler;
-    Action setValues;
     Action openFilerAction;
     Action openAttrDialogAction;
+    Action moveEntryAction;
 
     public TableContextMenu(BrowserTable browserTable) {
       super();
@@ -190,6 +189,8 @@ public class BrowserTable extends ExtendedTable {
       copyPath = new copyValue(browserTable, "path", "ファイルのパス");
       copyMenu.add(copyPath);
 
+      manageMenu = new JMenu("エントリの管理");
+      add(manageMenu);
       openFilerAction = new AbstractAction("ファイルを表示") {
 
         @Override
@@ -199,7 +200,7 @@ public class BrowserTable extends ExtendedTable {
           Util.showInFiler(browserWindow, browserTable.getEntries().get(0).getPath().toFile());
         }
       };
-      add(openFilerAction);
+      manageMenu.add(openFilerAction);
       openAttrDialogAction = new AbstractAction("属性を設定...") {
 
         @Override
@@ -215,7 +216,21 @@ public class BrowserTable extends ExtendedTable {
           updateSelectedRows();
         }
       };
-      add(openAttrDialogAction);
+      manageMenu.add(openAttrDialogAction);
+      moveEntryAction = new AbstractAction() {
+        BrowserWindow browserWindow =
+            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          ArrayList<Entry> entryList = browserTable.getEntries();
+          for (Entry entry : entryList) {
+
+          }
+
+        }
+      };
+
     }
 
     @Override

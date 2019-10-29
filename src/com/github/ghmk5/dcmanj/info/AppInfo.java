@@ -10,26 +10,45 @@ import com.github.ghmk5.dcmanj.util.Util;
 
 public class AppInfo {
 
+  // 各種パス
   String parentPath;
   String prefFilePath;
   String dbFilePath;
+
+  // ウィンドウの位置とサイズ、テーブルカラム幅
   Rectangle rectMain;
   Rectangle rectPref;
   Rectangle rectImpt;
   Rectangle rectAttr;
   HashMap<String, Integer> columnWidthMain;
   HashMap<String, Integer> columnWidthImpt;
+
+  // インポート関連
   String imptDir;
   String[] namesToBeIgnored;
   String saveDir;
+  Boolean zipToStore;
   Boolean useChildDir;
   String childDirPrefix;
   Boolean splitChildDirBySize;
   Integer childDirSplitSize;
   Boolean splitChildDirByNumber;
   Integer childDirSplitNumber;
-  Boolean zipToStore;
+
+  // 移動関連
+  Boolean sameAsImptOnMove;
+  Boolean zipToStoreOnMove;
+  Boolean useChildDirOnMove;
+  String childlDirPrefixOnMove;
+  Boolean splitChildDirBySizeOnMove;
+  Integer childDirSplitSizeOnMove;
+  Boolean splitChildDirByNumberOnMove;
+  Integer childDirSplitNumberOnMove;
+
+  // ビューワ
   String viewerPath;
+
+  // パーサ
   String[] evRegExStrings;
   String[] defaultEvRegExStrings = {"^C\\d{2,3}$", "サンクリ", "酒保", "コミティア", "COMITIA", "紅楼夢", "例大祭",
       "神戸かわさき", "砲雷", "夜戦に突入す", "もう何も恐くない", "みみけっと", "ふたけっと", "ぱんっあ☆ふぉー", "とら祭り", "こみトレ",
@@ -227,6 +246,9 @@ public class AppInfo {
   }
 
   public String getChildDirPrefix() {
+    if (Objects.isNull(childDirPrefix)) {
+      childDirPrefix = "";
+    }
     return childDirPrefix;
   }
 
@@ -292,6 +314,102 @@ public class AppInfo {
 
   public void setZipToStore(Boolean zipToStore) {
     this.zipToStore = zipToStore;
+  }
+
+  public Boolean getSameAsImptOnMove() {
+    if (Objects.isNull(sameAsImptOnMove)) {
+      sameAsImptOnMove = true;
+    }
+    return sameAsImptOnMove;
+  }
+
+  public void setSameAsImptOnMove(Boolean sameAsImptOnMove) {
+    this.sameAsImptOnMove = sameAsImptOnMove;
+  }
+
+  public Boolean getZipToStoreOnMove() {
+    if (Objects.isNull(zipToStoreOnMove)) {
+      zipToStoreOnMove = getZipToStore();
+    }
+    return zipToStoreOnMove;
+  }
+
+  public void setZipToStoreOnMove(Boolean zipToStoreOnMove) {
+    this.zipToStoreOnMove = zipToStoreOnMove;
+  }
+
+  public Boolean getUseChildDirOnMove() {
+    if (Objects.isNull(useChildDirOnMove)) {
+      useChildDirOnMove = true;
+    }
+    return useChildDirOnMove;
+  }
+
+  public void setUseChildDirOnMove(Boolean useChildDirOnMove) {
+    this.useChildDirOnMove = useChildDirOnMove;
+  }
+
+  public String getChildlDirPrefixOnMove() {
+    if (Objects.isNull(childlDirPrefixOnMove)) {
+      childlDirPrefixOnMove = getChildDirPrefix();
+    }
+    return childlDirPrefixOnMove;
+  }
+
+  public void setChildlDirPrefixOnMove(String chidlDirPrefixOnMove) {
+    this.childlDirPrefixOnMove = chidlDirPrefixOnMove;
+  }
+
+  public Boolean getSplitChildDirBySizeOnMove() {
+    if (Objects.isNull(splitChildDirBySizeOnMove)) {
+      splitChildDirBySizeOnMove = true;
+    }
+    return splitChildDirBySizeOnMove;
+  }
+
+  public void setSplitChildDirBySizeOnMove(Boolean splitChildDirBySizeOnMove) {
+    this.splitChildDirBySizeOnMove = splitChildDirBySizeOnMove;
+  }
+
+  public Integer getChildDirSplitSizeOnMove() {
+    if (Objects.isNull(childDirSplitSizeOnMove)) {
+      childDirSplitSizeOnMove = getChildDirSplitSize();
+    }
+    return childDirSplitSizeOnMove;
+  }
+
+  public void setChildDirSplitSizeOnMove(Integer childDirSplitSizeOnMove) {
+    this.childDirSplitSizeOnMove = childDirSplitSizeOnMove;
+  }
+
+  public Boolean getSplitChildDirByNumberOnMove() {
+    if (Objects.isNull(splitChildDirByNumberOnMove)) {
+      splitChildDirByNumberOnMove = getSplitChildDirByNumber();
+    }
+    return splitChildDirByNumberOnMove;
+  }
+
+  public void setSplitChildDirByNumberOnMove(Boolean splitChildDirByNumberOnMove) {
+    this.splitChildDirByNumberOnMove = splitChildDirByNumberOnMove;
+  }
+
+  public Integer getChildDirSplitNumberOnMove() {
+    if (Objects.isNull(childDirSplitNumberOnMove)) {
+      childDirSplitNumberOnMove = getChildDirSplitNumber();
+    }
+    return childDirSplitNumberOnMove;
+  }
+
+  public void setChildDirSplitNumberOnMove(Integer childDirSplitNumberOnMove) {
+    this.childDirSplitNumberOnMove = childDirSplitNumberOnMove;
+  }
+
+  public String[] getDefaultEvRegExStrings() {
+    return defaultEvRegExStrings;
+  }
+
+  public String[] getDefaultNoteRegExStrings() {
+    return defaultNoteRegExStrings;
   }
 
 
