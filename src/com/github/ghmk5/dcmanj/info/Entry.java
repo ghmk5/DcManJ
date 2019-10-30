@@ -2,6 +2,7 @@ package com.github.ghmk5.dcmanj.info;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -518,8 +519,9 @@ public class Entry {
   }
 
   /**
-   * 保存されたエントリから容量とファイル数を取得してフィールドにセットする
-   *
+   * 保存されたエントリから容量とファイル数を取得してフィールドにセットする<BR>
+   * ファイル名の文字コードはMS932->UTF8の順で試す<BR>
+   * それ以外だとエラーメッセージを出す
    */
   public void acquireSizeAndPages() {
     File file = this.path.toFile();
@@ -528,13 +530,21 @@ public class Entry {
     if (file.isFile()) {
       newSize = file.length() / 1024d / 1024d;
       if (file.getName().matches(".+\\.[Zz][Ii][Pp]$")) {
+        ZipFile zipFile;
         try {
-          ZipFile zipFile = new ZipFile(file);
-          newPages = (int) zipFile.stream().filter(x -> !x.isDirectory()).count();
-          zipFile.close();
+          zipFile = new ZipFile(file, Charset.forName("MS932"));
+          try {
+            newPages = (int) zipFile.stream().filter(x -> !x.isDirectory()).count();
+          } catch (IllegalArgumentException e) {
+            zipFile.close();
+            zipFile = new ZipFile(file);
+            newPages = (int) zipFile.stream().filter(x -> !x.isDirectory()).count();
+          } finally {
+            zipFile.close();
+          }
         } catch (Exception e) {
           JOptionPane.showMessageDialog(null,
-              "zipファイル " + file.getName() + " の内容を読み取れません(暗号化ファイル?)", "エラー",
+              "zipファイル " + file.getName() + " の内容を読み取れません\n(暗号化されている or 未知の文字コードが使用されている?)", "エラー",
               JOptionPane.ERROR_MESSAGE);
           e.printStackTrace();
           return;
