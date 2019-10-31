@@ -63,8 +63,9 @@ public class BrowserWindow extends JFrame {
     this.addWindowListener(new BrowserWindowListner());
 
     // MacOSのVM(あるいはL&F)はTableだけ選択色と被選択時文字色がおかしいので修正
-    if (main.platform.equals("mac")) {
-      UIManager.put("Table.selectionBackground", UIManager.getColor("EditorPane.selectionBackground"));
+    if (Util.PLATFORM.equals("mac")) {
+      UIManager.put("Table.selectionBackground",
+          UIManager.getColor("EditorPane.selectionBackground"));
       SwingUtilities.updateComponentTreeUI(this);
     }
 

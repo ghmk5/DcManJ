@@ -81,8 +81,9 @@ public class ImportDialog extends JDialog {
     }
 
     // MacOSのVM(あるいはL&F)はTableだけ選択色と被選択時文字色がおかしいので修正
-    if (browserWindow.main.platform.equals("mac")) {
-      UIManager.put("Table.selectionBackground", UIManager.getColor("EditorPane.selectionBackground"));
+    if (Util.PLATFORM.equals("mac")) {
+      UIManager.put("Table.selectionBackground",
+          UIManager.getColor("EditorPane.selectionBackground"));
       SwingUtilities.updateComponentTreeUI(this);
     }
 

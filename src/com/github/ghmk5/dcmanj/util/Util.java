@@ -54,6 +54,16 @@ import com.github.ghmk5.dcmanj.info.AppInfo;
 public class Util {
 
   static public DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss Z");
+  public static String PLATFORM;
+
+  static {
+    String osName = System.getProperty("os.name").toLowerCase();
+    if (osName.startsWith("windows")) {
+      PLATFORM = "win";
+    } else if (osName.startsWith("mac")) {
+      PLATFORM = "mac";
+    }
+  }
 
   /**
    * <p>
@@ -449,11 +459,30 @@ public class Util {
       JOptionPane.showMessageDialog(null, entryPath + " にアクセスできません");
       return;
     }
-    if (Objects.nonNull(viewerPath) && new File(viewerPath).canExecute()) {
-      if (!entryPath.contains(" ")) {
-        entryPath = escapeForCMD(entryPath);
+    if (Objects.nonNull(viewerPath)) {
+      String command[];
+      if (Util.PLATFORM.equals("win")) {
+        if (!entryPath.contains(" ")) {
+          entryPath = escapeForCMD(entryPath);
+        }
+        command = new String[4];
+        command[0] = "cmd";
+        command[1] = "/c";
+        command[2] = "\"" + viewerPath;
+        command[3] = entryPath + "\"";
+      } else if (Util.PLATFORM.equals("mac")) {
+        entryPath = entryPath.replaceAll(" ", "\\ ");
+        viewerPath = viewerPath.replaceAll(" ", "\\ ");
+        command = new String[4];
+        command[0] = "open";
+        command[1] = "-a";
+        command[2] = viewerPath;
+        command[3] = entryPath;
+      } else {
+        command = new String[3];
+        command[0] = viewerPath;
+        command[1] = entryPath;
       }
-      String[] command = {"cmd", "/c", "\"" + viewerPath, entryPath + "\""};
       try {
         Runtime.getRuntime().exec(command);
       } catch (IOException e) {
@@ -473,9 +502,8 @@ public class Util {
    * @throws IOException
    */
   public static void showInFiler(Window owner, File file) {
-    String osName = System.getProperty("os.name").toLowerCase();
     ArrayList<String> commandList = new ArrayList<String>();
-    if (osName.startsWith("windows")) {
+    if (Util.PLATFORM.equals("win")) {
       commandList.add("cmd");
       commandList.add("/c");
       StringBuilder argBuilder = new StringBuilder("%windir%\\explorer ");
@@ -484,7 +512,7 @@ public class Util {
       }
       argBuilder.append("^\"" + escapeForCMD(file.getPath().toString()) + "^\"");
       commandList.add(argBuilder.toString());
-    } else if (osName.startsWith("mac")) {
+    } else if (Util.PLATFORM.equals("mac")) {
       commandList.add("open");
       if (file.isDirectory()) {
         commandList.add(file.getPath().toString());
