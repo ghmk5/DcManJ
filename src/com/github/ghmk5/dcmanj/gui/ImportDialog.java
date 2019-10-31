@@ -454,6 +454,13 @@ public class ImportDialog extends JDialog {
 
     @Override
     protected Object doInBackground() throws IOException, SQLException {
+      File srcFile;
+      File saveDir;
+      String newFilename;
+      File newFile;
+      Double newSize;
+
+
       for (Entry entry : entryList) {
 
         if (progressMonitor.isCanceled()) {
@@ -464,7 +471,7 @@ public class ImportDialog extends JDialog {
         processed++;
         partMax = totalProgress + progressPart;
 
-        File srcFile = entry.getPath().toFile();
+        srcFile = entry.getPath().toFile();
 
         publish(new Object[] {entry.getPath().toFile().getName(), processed, totalProgress});
 
@@ -491,10 +498,14 @@ public class ImportDialog extends JDialog {
         // 元がディレクトリでzipして保管オブションが選択されていない場合はそのままここに来る
 
         // 保存先ディレクトリを設定
-        File saveDir = Util.prepSaveDir(appInfo, srcFile);
+        saveDir = Util.prepSaveDir(appInfo, srcFile);
 
         // 保存先のFileインスタンスを生成
-        File newFile = new File(saveDir, entry.generateNameToSave() + ".zip");
+        newFilename = entry.generateNameToSave();
+        if (srcFile.isFile() && srcFile.getName().endsWith(".zip")) {
+          newFilename += ".zip";
+        }
+        newFile = new File(saveDir, newFilename);
 
         // 同名のエントリが既に存在する場合、後置付随詞群に"再"を付け加えて再生成
         if (newFile.exists()) {
@@ -527,7 +538,6 @@ public class ImportDialog extends JDialog {
         entryMap.remove(entry.getPath().toFile().getName());
 
         // Entryのサイズとパスを書き換え
-        Double newSize;
         if (newFile.isFile()) {
           newSize = newFile.length() / 1024d / 1024d;
         } else {
