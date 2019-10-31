@@ -33,6 +33,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultEditorKit;
@@ -59,6 +61,12 @@ public class BrowserWindow extends JFrame {
     super();
     this.main = main;
     this.addWindowListener(new BrowserWindowListner());
+
+    // MacOSのVM(あるいはL&F)はTableだけ選択色と被選択時文字色がおかしいので修正
+    if (main.platform.equals("mac")) {
+      UIManager.put("Table.selectionBackground", UIManager.getColor("EditorPane.selectionBackground"));
+      SwingUtilities.updateComponentTreeUI(this);
+    }
 
     this.setTitle("DcManJ");
     this.setTitle("DcManJ(Dev)");

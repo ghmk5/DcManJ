@@ -42,6 +42,7 @@ import javax.swing.ProgressMonitor;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -77,6 +78,12 @@ public class ImportDialog extends JDialog {
         appInfo.setImptDir(dirPath);
         Util.writeAppInfo(appInfo);
       }
+    }
+
+    // MacOSのVM(あるいはL&F)はTableだけ選択色と被選択時文字色がおかしいので修正
+    if (browserWindow.main.platform.equals("mac")) {
+      UIManager.put("Table.selectionBackground", UIManager.getColor("EditorPane.selectionBackground"));
+      SwingUtilities.updateComponentTreeUI(this);
     }
 
     setTitle(dirPath + " から新規エントリを読み込み");

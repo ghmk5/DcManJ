@@ -26,9 +26,20 @@ public class DcManJ {
   // public Statement statement = null;
   public String conArg;
   public Font tableFont;
+  /*
+   * プラットフォーム判別文字列 Windows:"win", Mac:"mac"
+   */
+  public String platform;
 
 
-  public DcManJ() {}
+  public DcManJ() {
+    String osName = System.getProperty("os.name").toLowerCase();
+    if (osName.startsWith("windows")) {
+      platform = "wind";
+    } else if (osName.startsWith("mac")) {
+      platform = "mac";
+    }
+  }
 
 
   public static void main(String[] args) throws URISyntaxException, IOException, SQLException {
