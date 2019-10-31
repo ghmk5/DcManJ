@@ -720,6 +720,10 @@ public class Entry {
         .replaceAll(":", "：").replaceAll("\\?", "？").replaceAll("\"", "”").replaceAll("<", "＜")
         .replaceAll(">", "＞").replaceAll("\\|", "｜").replaceAll("\\*", "＊");
 
+    // Windowsではファイル名末尾のピリオドやスペースが許されないので除去
+    filename = filename.trim();
+    filename = filename.replaceAll("\\.+$", "");
+
     return filename;
   }
 
