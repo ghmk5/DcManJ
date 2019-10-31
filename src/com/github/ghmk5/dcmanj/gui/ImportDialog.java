@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -437,12 +438,14 @@ public class ImportDialog extends JDialog {
     int partMax = 0;
     int processed = 0;
     MagZip zipper;
+    ArrayList<String> filenamesGotError;
 
     public ImportWorker(ArrayList<Entry> entryList, AppInfo appInfo) {
       super();
       this.entryList = entryList;
       this.appInfo = appInfo;
       progressPart = max / entryList.size();
+      filenamesGotError = new ArrayList<String>();
     }
 
     void setFProgress(float f) {
@@ -466,7 +469,7 @@ public class ImportDialog extends JDialog {
         publish(new Object[] {entry.getPath().toFile().getName(), processed, totalProgress});
 
         // entryをzipして保管するオプションが選択されている && 元がディレクトリの場合は一時ファイルにzipし、移動元を一時ファイルに切り替える
-        if (appInfo.getZipToStore() && entry.getPath().toFile().isDirectory()) {
+        if (appInfo.getZipToStore() && srcFile.isDirectory()) {
           // 一時ファイルとしてzip
           zipper = new MagZip();
           zipper.addPropertyChangeListener(new PropertyChangeListener() {
@@ -481,9 +484,11 @@ public class ImportDialog extends JDialog {
             }
           });
           srcFile = zipper.zipToTmp(srcFile, "DcManJTMP", ".zip");
-        } else if (!srcFile.isFile()) {
+        } else if (!srcFile.isDirectory() && !srcFile.isFile()) {
+          filenamesGotError.add(srcFile.getName());
           throw new IllegalArgumentException("Entry.pathの示す内容がファイルでもディレクトリでもない(シンボリックリンク?)");
         }
+        // 元がディレクトリでzipして保管オブションが選択されていない場合はそのままここに来る
 
         // 保存先ディレクトリを設定
         File saveDir = Util.prepSaveDir(appInfo, srcFile);
@@ -557,8 +562,23 @@ public class ImportDialog extends JDialog {
 
     @Override
     protected void done() {
-      updateTable();
-      setProgress(max);
+      try {
+        // doInBackgroundで発生した例外を捕捉するためだけにある行。意味のある処理ではない
+        Object o = get();
+      } catch (IllegalArgumentException e) {
+        // 指定されたエントリがシンボリックリンクだったりするとここに落ちてくるが、処理を記述しても実行されないっぽい
+        // 多分ほかのcatch文節も同じだろう。JavaDocの例では単に無視しているらしいが…
+        e.printStackTrace();
+      } catch (InterruptedException e) {
+        // TODO 自動生成された catch ブロック
+        e.printStackTrace();
+      } catch (ExecutionException e) {
+        // TODO 自動生成された catch ブロック
+        e.printStackTrace();
+      } finally {
+        updateTable();
+        setProgress(max);
+      }
     }
   }
 
