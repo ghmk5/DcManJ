@@ -166,7 +166,11 @@ public class AppInfo {
   }
 
   public String getImptDir() {
-    return imptDir;
+    if (Objects.isNull(imptDir)) {
+      return System.getProperty("user.home");
+    } else {
+      return imptDir;
+    }
   }
 
   public void setImptDir(String imptDir) {
