@@ -22,7 +22,6 @@ import javax.swing.Action;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
-import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -35,6 +34,7 @@ import com.github.ghmk5.dcmanj.util.Util;
 
 public class BrowserTable extends ExtendedTable {
   DcManJ main;
+  BrowserWindow browserWindow;
   DefaultTableModel model;
   String[] tableHeaders = {"ID", "種別", "成", "サークル", "著者", "タイトル(素)", "副題", "巻号", "issue", "タイトル",
       "備考", "頁数", "容量", "パス", "日付", "元ネタ", "発刊"};
@@ -78,13 +78,13 @@ public class BrowserTable extends ExtendedTable {
   }
 
 
-  public BrowserTable(DcManJ main) {
+  public BrowserTable(DcManJ main, BrowserWindow browserWindow) {
     super();
 
     entryMap = new HashMap<Integer, Entry>();
 
     this.main = main;
-    // model = new BrowserTableModel();
+    this.browserWindow = browserWindow;
     model = new DefaultTableModel(tableHeaders, 0) {
 
       // 各列が持つデータのクラスを指定
@@ -138,7 +138,6 @@ public class BrowserTable extends ExtendedTable {
     });
 
     // setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
   }
 
   class TableContextMenu extends JPopupMenu {
@@ -158,7 +157,8 @@ public class BrowserTable extends ExtendedTable {
     JMenu manageMenu;
     Action openFilerAction;
     Action openAttrDialogAction;
-    Action moveEntryAction;
+    Action removeEntriesAction;
+    Action moveEntriesAction;
 
     public TableContextMenu(BrowserTable browserTable) {
       super();
@@ -195,8 +195,6 @@ public class BrowserTable extends ExtendedTable {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-          BrowserWindow browserWindow =
-              (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
           Util.showInFiler(browserWindow, browserTable.getEntries().get(0).getPath().toFile());
         }
       };
@@ -206,8 +204,6 @@ public class BrowserTable extends ExtendedTable {
         @Override
         public void actionPerformed(ActionEvent e) {
           ArrayList<Entry> entryList = browserTable.getEntries();
-          BrowserWindow browserWindow =
-              (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
           AttrDialog attrDialog = new AttrDialog(browserWindow, entryList);
           attrDialog.setLocation(main.appInfo.getRectAttr().getLocation());
           attrDialog.setModal(true);
@@ -217,9 +213,20 @@ public class BrowserTable extends ExtendedTable {
         }
       };
       manageMenu.add(openAttrDialogAction);
-      moveEntryAction = new AbstractAction() {
-        BrowserWindow browserWindow =
-            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
+      removeEntriesAction = new AbstractAction("エントリを削除...") {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          // TODO 自動生成されたメソッド・スタブ
+          // 確認ダイアログ表示
+          // ファイル削除
+          // データベースから削除
+          // テーブルモデルから削除
+          // entryMapから削除
+        }
+      };
+      manageMenu.add(removeEntriesAction);
+      moveEntriesAction = new AbstractAction("ファイルを移動...") {
 
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -230,7 +237,7 @@ public class BrowserTable extends ExtendedTable {
 
         }
       };
-
+      manageMenu.add(moveEntriesAction);
     }
 
     @Override
@@ -320,8 +327,6 @@ public class BrowserTable extends ExtendedTable {
       }
       String sql =
           "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
-      BrowserWindow browserWindow =
-          (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, browserTable);
       BrowserWindow newWindow = new BrowserWindow(main);
       main.listBrowserWindows.add(newWindow);
       newWindow.refreshTable(sql);
@@ -393,8 +398,6 @@ public class BrowserTable extends ExtendedTable {
         statement.close();
         connection.close();
       } catch (SQLException e) {
-        BrowserWindow browserWindow =
-            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
         Util.showErrorMessage(browserWindow, e, sql);
         e.printStackTrace();
         return null;
@@ -446,8 +449,6 @@ public class BrowserTable extends ExtendedTable {
         }
         connection.close();
       } catch (SQLException e) {
-        BrowserWindow browserWindow =
-            (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
         Util.showErrorMessage(browserWindow, e, sql);
         e.printStackTrace();
       }
@@ -499,8 +500,6 @@ public class BrowserTable extends ExtendedTable {
 
       connection.close();
     } catch (SQLException e) {
-      BrowserWindow browserWindow =
-          (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
       Util.showErrorMessage(browserWindow, e, sql);
       e.printStackTrace();
     }
@@ -542,8 +541,6 @@ public class BrowserTable extends ExtendedTable {
       TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
       this.setRowSorter(sorter);
     } catch (SQLException e) {
-      BrowserWindow browserWindow =
-          (BrowserWindow) SwingUtilities.getAncestorOfClass(BrowserWindow.class, this);
       Util.showErrorMessage(browserWindow, e, sql);
       e.printStackTrace();
     }

@@ -171,7 +171,7 @@ public class BrowserWindow extends JFrame {
     JPanel lowerPanel = new JPanel(new BorderLayout());
     panel.add(lowerPanel);
 
-    table = new BrowserTable(main);
+    table = new BrowserTable(main, this);
     table.getTableHeader().setFont(main.tableFont);
     table.setFont(main.tableFont);
 
