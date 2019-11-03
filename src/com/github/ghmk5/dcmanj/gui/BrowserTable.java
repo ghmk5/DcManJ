@@ -9,18 +9,22 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
@@ -28,6 +32,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+import org.apache.commons.io.FileUtils;
 import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.main.DcManJ;
 import com.github.ghmk5.dcmanj.util.Util;
@@ -219,10 +224,62 @@ public class BrowserTable extends ExtendedTable {
         public void actionPerformed(ActionEvent e) {
           // TODO 自動生成されたメソッド・スタブ
           // 確認ダイアログ表示
-          // ファイル削除
-          // データベースから削除
-          // テーブルモデルから削除
-          // entryMapから削除
+          int answer = JOptionPane.showConfirmDialog(browserWindow, "選択されたエントリを削除します。よろしいですか？",
+              "削除の確認", JOptionPane.YES_NO_OPTION);
+          if (answer == JOptionPane.YES_OPTION) {
+            ArrayList<Entry> entryList = browserTable.getEntries();
+            model = (DefaultTableModel) browserTable.getModel();
+            File file;
+            String sql = "";
+            try {
+              Connection connection = DriverManager.getConnection(main.conArg);
+              Statement statement = connection.createStatement();
+              for (Entry entry : entryList) {
+                // ファイル削除
+                try {
+                  file = entry.getPath().toFile();
+                  if (file.isFile()) {
+                    file.delete();
+                  } else {
+                    FileUtils.deleteDirectory(file);
+                  }
+                } catch (IOException e1) {
+                  // macだとなぜかファイルが削除できなかった場合でも例外がスローされない
+                  String message = "以下のファイルが削除できません\n\n  ";
+                  message += entry.getPath().toString();
+                  message += "\n\n  ファイルのパスをクリップボードにコピーしました";
+                  StringSelection selection = new StringSelection(entry.getPath().toString());
+                  Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection,
+                      selection);
+                  JOptionPane.showMessageDialog(browserWindow, message, "ファイルの削除エラー",
+                      JOptionPane.ERROR_MESSAGE);
+                  e1.printStackTrace();
+                }
+                // データベースから削除
+                sql = "DELETE FROM magdb WHERE ROWID = " + String.valueOf(entry.getId()) + ";";
+                statement.execute(sql);
+                // entryMapから削除
+                entryMap.remove(entry.getId());
+              }
+              statement.close();
+              connection.close();
+            } catch (SQLException e2) {
+              Util.showErrorMessage(browserWindow, e2, sql);
+              e2.printStackTrace();
+            }
+            // テーブルモデルから削除
+            // getSelectedRows()の戻り値は、選択した順番に関わりなく数値昇順
+            // そのまま順に(=上から)削除していくと削除すべきIDがずれるので(例えば行ID2と3を削除したいとき、2を削除するとそれまで3だった行はID2になっている)、
+            // 降順で(=下から)削除していく必要がある
+            ArrayList<Integer> modelRowIDs = new ArrayList<Integer>();
+            for (int rowID : getSelectedRows()) {
+              modelRowIDs.add(convertRowIndexToModel(rowID));
+            }
+            modelRowIDs.sort(Comparator.reverseOrder());
+            for (Integer modelRowID : modelRowIDs) {
+              model.removeRow(modelRowID);
+            }
+          }
         }
       };
       manageMenu.add(removeEntriesAction);
