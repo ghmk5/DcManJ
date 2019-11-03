@@ -479,7 +479,7 @@ public class Util {
         command[2] = viewerPath;
         command[3] = entryPath;
       } else {
-        command = new String[3];
+        command = new String[2];
         command[0] = viewerPath;
         command[1] = entryPath;
       }
