@@ -366,22 +366,25 @@ public class Util {
   }
 
   /**
-   * Entryのデータベースフィールドに適用するフィールド値をSQLのINSERT文やUPDATE文で使えるようにクォートして返す
+   * Entryのフィールド値のうち、データベースフィールドに適用するものを<BR>
+   * SQLのINSERT文やUPDATE文で使えるように適切にエスケープ/クォートして返す<BR>
+   * ※ LIKE queryや GLOB queryで使用することは想定していない また、エスケープが必要な文字<BR>
+   * (ここではシングルクォートのみ)が混ざることが考えにくいオブジェクト型では処理を省略してある
    *
    * @param object Entryクラスのフィールド値
-   * @return objectのクラスに応じて適切にクォートされたString値
+   * @return objectのクラスに応じて適切にエスケープ/クォートされたString値
    * @throws IllegalArgumentException 使用されないはずのオブジェクトクラスが与えられたときに発生
    */
   public static String quoteForSQL(Object object) throws IllegalArgumentException {
     String result;
     if (object instanceof String) {
-      result = "'" + (String) object + "'";
+      result = "'" + ((String) object).replaceAll("\'", "\'\'") + "'";
     } else if (object instanceof Boolean) {
       result = "'" + String.valueOf(object) + "'";
     } else if ((object instanceof Integer) || (object instanceof Double)) {
       result = String.valueOf(object);
     } else if (object instanceof Path) {
-      result = "'" + ((Path) object).toFile().getAbsolutePath() + "'";
+      result = "'" + ((Path) object).toFile().getAbsolutePath().replaceAll("\'", "\'\'") + "'";
     } else if (object instanceof OffsetDateTime) {
       result = "'" + ((OffsetDateTime) object).format(DTF) + "'";
     } else if (Objects.isNull(object)) {
