@@ -222,7 +222,7 @@ public class BrowserTable extends ExtendedTable {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-          // TODO 自動生成されたメソッド・スタブ
+          ArrayList<String> filesNotFound = new ArrayList<String>();
           // 確認ダイアログ表示
           int answer = JOptionPane.showConfirmDialog(browserWindow, "選択されたエントリを削除します。よろしいですか？",
               "削除の確認", JOptionPane.YES_NO_OPTION);
@@ -239,12 +239,18 @@ public class BrowserTable extends ExtendedTable {
                 try {
                   file = entry.getPath().toFile();
                   if (file.isFile()) {
-                    file.delete();
-                  } else {
+                    System.out.println(file.delete());
+                    // file.delete();
+                  } else if (file.isDirectory()) {
                     FileUtils.deleteDirectory(file);
+                  } else {
+                    // 消すべきファイルが見つからなかった場合はここに来る
+                    // ファイルが無いことを承知の上でレコードだけ消したい場合を考慮し、エラーメッセージは後でまとめて出す
+                    // (ここで出すとループ1回毎にメッセージが出ることになるため)
+                    filesNotFound.add(file.getPath().toString());
                   }
                 } catch (IOException e1) {
-                  // macだとなぜかファイルが削除できなかった場合でも例外がスローされない
+                  // 消すべきファイルは見つかったけど何らかの理由で消せなかった場合はここに来る
                   String message = "以下のファイルが削除できません\n\n  ";
                   message += entry.getPath().toString();
                   message += "\n\n  ファイルのパスをクリップボードにコピーしました";
@@ -278,6 +284,19 @@ public class BrowserTable extends ExtendedTable {
             modelRowIDs.sort(Comparator.reverseOrder());
             for (Integer modelRowID : modelRowIDs) {
               model.removeRow(modelRowID);
+            }
+            // 消すべきファイルが見つからないエントリがあった場合
+            if (filesNotFound.size() > 0) {
+              String message = "以下のファイルは見つからなかったため削除できませんでした\n\n  ";
+              message +=
+                  String.join("\n  ", filesNotFound.toArray(new String[filesNotFound.size()]));
+              message += "\n\n  ファイルのパスをクリップボードにコピーしました";
+              message += "\n\n  オフラインボリュームに保存されているなどの場合、必要に応じて手動で削除してください";
+              StringSelection selection = new StringSelection(
+                  String.join("\n", filesNotFound.toArray(new String[filesNotFound.size()])));
+              Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+              JOptionPane.showMessageDialog(browserWindow, message, "ファイルの削除エラー",
+                  JOptionPane.ERROR_MESSAGE);
             }
           }
         }
