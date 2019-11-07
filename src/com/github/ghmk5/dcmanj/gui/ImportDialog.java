@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -26,7 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -52,6 +52,7 @@ import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.util.MagZip;
 import com.github.ghmk5.dcmanj.util.Util;
+import com.github.ghmk5.dcmanj.util.Worker;
 
 public class ImportDialog extends JDialog {
   BrowserWindow browserWindow;
@@ -239,7 +240,7 @@ public class ImportDialog extends JDialog {
   }
 
   // entryMapの内容をテーブルに挿入
-  private void updateTable() {
+  public void updateTable() {
     // ソート順を保存しておく (テーブル内容を書き換えた後で再適用する)
     List<? extends SortKey> sortKeys = null;
     if (Objects.nonNull(table.getRowSorter())) {
@@ -335,6 +336,14 @@ public class ImportDialog extends JDialog {
     refreshSelectedRows();
   }
 
+  public HashMap<String, Entry> getEntryMap() {
+    return entryMap;
+  }
+
+  public void setEntryMap(HashMap<String, Entry> entryMap) {
+    this.entryMap = entryMap;
+  }
+
   /**
    * テーブルで選択された行に対応するEntryを返す
    *
@@ -386,7 +395,9 @@ public class ImportDialog extends JDialog {
     progressMonitor.setMillisToDecideToPopup(5);
     progressMonitor.setProgress(min);
 
-    SwingWorker<Object, Object[]> importWorker = new ImportWorker(entryList, appInfo);
+    SwingWorker<Object, Object[]> importWorker =
+        new Worker<String>(this, progressMonitor, entryList, appInfo);
+    // SwingWorker<Object, Object[]> importWorker = new ImportWorker(this, entryList, appInfo);
 
     importWorker.addPropertyChangeListener(new PropertyChangeListener() {
       @Override
@@ -398,6 +409,7 @@ public class ImportDialog extends JDialog {
     });
 
     importWorker.execute();
+    // 処理がここまで来た段階でentryListの中身は書き換わっている
 
   }
 
@@ -430,24 +442,38 @@ public class ImportDialog extends JDialog {
     connection.close();
   }
 
-  private class ImportWorker extends SwingWorker<Object, Object[]> {
+  private class ImportWorker<E> extends SwingWorker<Object, Object[]> {
 
+    Window caller;
     AppInfo appInfo;
     ArrayList<Entry> entryList;
+    HashMap<E, Entry> entryMap;
     int max = 100;
     int progressPart;
     int totalProgress = 0;
     int partMax = 0;
     int processed = 0;
     MagZip zipper;
-    ArrayList<String> filenamesGotError;
+    ArrayList<Entry> entriesCouldntZip;
+    ArrayList<Entry> entriesOfIllegalType;
+    ArrayList<Entry> entriesCouldntMove;
+    ArrayList<Entry> entriesCouldntInsert;
+    File dbFile;
 
-    public ImportWorker(ArrayList<Entry> entryList, AppInfo appInfo) {
+    public ImportWorker(Window caller, ArrayList<Entry> entryList, AppInfo appInfo) {
       super();
+      this.caller = caller;
       this.entryList = entryList;
       this.appInfo = appInfo;
       progressPart = max / entryList.size();
-      filenamesGotError = new ArrayList<String>();
+      entriesCouldntZip = new ArrayList<Entry>();
+      entriesOfIllegalType = new ArrayList<Entry>();
+      entriesCouldntMove = new ArrayList<Entry>();
+      entriesCouldntInsert = new ArrayList<Entry>();
+      dbFile = new File(appInfo.getDbFilePath());
+      if (caller instanceof ImportDialog) {
+        this.entryMap = (HashMap<E, Entry>) ((ImportDialog) caller).getEntryMap();
+      }
     }
 
     void setFProgress(float f) {
@@ -455,7 +481,7 @@ public class ImportDialog extends JDialog {
     }
 
     @Override
-    protected Object doInBackground() throws IOException, SQLException {
+    protected Object doInBackground() {
       File srcFile;
       File saveDir;
       String newFilename;
@@ -492,15 +518,27 @@ public class ImportDialog extends JDialog {
               }
             }
           });
-          srcFile = zipper.zipToTmp(srcFile, "DcManJTMP", ".zip");
+          try {
+            srcFile = zipper.zipToTmp(srcFile, "DcManJTMP", ".zip");
+          } catch (IOException e) {
+            // 一時ファイルにzipできなかった場合
+            entriesCouldntZip.add(entry);
+            continue;
+          }
         } else if (!srcFile.isDirectory() && !srcFile.isFile()) {
-          filenamesGotError.add(srcFile.getName());
-          throw new IllegalArgumentException("Entry.pathの示す内容がファイルでもディレクトリでもない(シンボリックリンク?)");
+          // 元ファイルが存在しないか、ファイルでもディレクトリでもなかった場合
+          entriesOfIllegalType.add(entry);
+          continue;
         }
         // 元がディレクトリでzipして保管オブションが選択されていない場合はそのままここに来る
 
         // 保存先ディレクトリを設定
-        saveDir = Util.prepSaveDir(appInfo, srcFile);
+        if (Objects.isNull(entry.getId())) { // インポートの場合
+          saveDir = Util.prepSaveDir(appInfo, srcFile);
+        } else { // 移動の場合
+          // TODO 適切な保存先を返す処理
+          saveDir = Util.prepSaveDir(appInfo, srcFile);
+        }
 
         // 保存先のFileインスタンスを生成
         newFilename = entry.generateNameToSave();
@@ -525,18 +563,30 @@ public class ImportDialog extends JDialog {
         }
 
         // 移動実行
-        if (srcFile.isFile()) {
-          FileUtils.moveFile(srcFile, newFile);
-        } else {
-          FileUtils.moveDirectory(srcFile, newFile);
+        try {
+          if (srcFile.isFile()) {
+            FileUtils.moveFile(srcFile, newFile);
+          } else {
+            FileUtils.moveDirectory(srcFile, newFile);
+          }
+        } catch (IOException e) {
+          entriesCouldntMove.add(entry);
+          continue;
         }
 
         // 元がディレクトリでzipして保存した場合は元のディレクトリを削除
+        // TODO 移動の場合の判断分岐
         if (appInfo.getZipToStore() && entry.getPath().toFile().isDirectory()) {
-          FileUtils.deleteDirectory(entry.getPath().toFile());
+          try {
+            FileUtils.deleteDirectory(entry.getPath().toFile());
+          } catch (IOException e) {
+            entriesCouldntMove.add(entry);
+            continue;
+          }
         }
 
         // entryMapからインポート済みのエントリを除去
+        // TODO 外に出す?
         entryMap.remove(entry.getPath().toFile().getName());
 
         // Entryのサイズとパスを書き換え
@@ -549,15 +599,24 @@ public class ImportDialog extends JDialog {
         entry.setPath(newFile.toPath());
         entry.setDate(OffsetDateTime.now(ZoneId.systemDefault()));
 
-        // Entryの内容をデータベースに挿入 updateの場合は別途処理を作る
-        putNewRecord(entry, browserWindow.main.dbFile);
-        setProgress(partMax);
-        totalProgress = partMax;
+        // Entryの内容をデータベースに反映
+        if (Objects.isNull(entry.getId())) { // インポートの場合
+          try {
+            ImportDialog.putNewRecord(entry, dbFile);
+            setProgress(partMax);
+            totalProgress = partMax;
+          } catch (SQLException e) {
+            entriesCouldntInsert.add(entry);
+            continue;
+          }
+        } else {
+          // TODO 移動の場合のSQL文生成と実行
+        }
 
         publish(new Object[] {entry.getPath().toFile().getName(), processed, totalProgress});
 
       }
-      return null;
+      return entryList;
     }
 
     @Override
@@ -574,23 +633,54 @@ public class ImportDialog extends JDialog {
 
     @Override
     protected void done() {
-      try {
-        // doInBackgroundで発生した例外を捕捉するためだけにある行。意味のある処理ではない
-        Object o = get();
-      } catch (IllegalArgumentException e) {
-        // 指定されたエントリがシンボリックリンクだったりするとここに落ちてくるが、処理を記述しても実行されないっぽい
-        // 多分ほかのcatch文節も同じだろう。JavaDocの例では単に無視しているらしいが…
-        e.printStackTrace();
-      } catch (InterruptedException e) {
-        // TODO 自動生成された catch ブロック
-        e.printStackTrace();
-      } catch (ExecutionException e) {
-        // TODO 自動生成された catch ブロック
-        e.printStackTrace();
-      } finally {
-        updateTable();
-        setProgress(max);
+      if (entriesOfIllegalType.size() > 0 || entriesCouldntZip.size() > 0
+          || entriesCouldntMove.size() > 0 || entriesCouldntInsert.size() > 0) {
+        StringBuilder stringBuilder = new StringBuilder("処理中にエラーが発生しました\n\n");
+        if (entriesOfIllegalType.size() > 0) {
+          stringBuilder.append("  以下のエントリはファイルが存在しないか、あるいはファイルでもディレクトリでもないため処理できません\n");
+          for (Entry entry : entriesOfIllegalType) {
+            stringBuilder.append("    ");
+            stringBuilder.append(entry.getPath().toString());
+            stringBuilder.append("\n");
+          }
+          stringBuilder.append("\n");
+        }
+        if (entriesCouldntZip.size() > 0) {
+          stringBuilder.append("  以下のファイルは圧縮できませんでした(ファイル名もしくは一時ファイル領域に問題?)\n");
+          for (Entry entry : entriesCouldntZip) {
+            stringBuilder.append("    ");
+            stringBuilder.append(entry.getPath().toString());
+            stringBuilder.append("\n");
+          }
+          stringBuilder.append("\n");
+        }
+        if (entriesCouldntMove.size() > 0) {
+          stringBuilder.append("  以下のファイルは保存先に移動できませんでした(ファイルが使用中?)\n");
+          for (Entry entry : entriesCouldntMove) {
+            stringBuilder.append("    ");
+            stringBuilder.append(entry.getPath().toString());
+            stringBuilder.append("\n");
+          }
+          stringBuilder.append("\n");
+        }
+        if (entriesCouldntInsert.size() > 0) {
+          stringBuilder.append("  以下のエントリはデータベースに登録できませんでした(ファイル名もしくはデータベースファイルに問題?)\n");
+          for (Entry entry : entriesCouldntInsert) {
+            stringBuilder.append("    ");
+            stringBuilder.append(entry.getPath().toString());
+            stringBuilder.append("\n");
+          }
+          stringBuilder.append("\n");
+        }
+
+        String message = stringBuilder.toString();
+        JOptionPane.showMessageDialog(rootPane, message, "エラー", JOptionPane.ERROR_MESSAGE);
       }
+      if (caller instanceof ImportDialog) {
+        ((ImportDialog) caller).setEntryMap((HashMap<String, Entry>) entryMap);
+        ((ImportDialog) caller).updateTable();
+      }
+      setProgress(max);
     }
   }
 
