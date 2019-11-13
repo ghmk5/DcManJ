@@ -56,18 +56,6 @@ public class PrefsDialog extends JDialog {
   JTextField splitNumberField;
   ButtonGroup splitStyleBG;
 
-  // 移動関連
-  JCheckBox sameAsNewEntriesChkBx;
-  JCheckBox zipOnMoveChkBx;
-  JCheckBox useChildDirOnMoveChkBx;
-  ButtonGroup moveDestDirOptionBG;
-  JTextField childDirPrefixOnMoveField;
-  ButtonGroup splitStyleOnMoveBG;
-  JRadioButton splitBySizeOnMoveRB;
-  JTextField splitSizeOnMoveField;
-  JRadioButton splitByNumberOnMoveRB;
-  JTextField splitNumberOnMoveField;
-
   // ビューワパス
   JTextField viewerPathField;
   JButton selectViewerExecutableButton;
@@ -161,56 +149,6 @@ public class PrefsDialog extends JDialog {
 
     panel.add(Box.createVerticalStrut(8));
 
-    // 移動関連
-    box = Box.createVerticalBox();
-    box.setBorder(new TitledBorder("移動時オプション"));
-    panel.add(box);
-    childBox = Box.createHorizontalBox();
-    box.add(childBox);
-
-    sameAsNewEntriesChkBx = new JCheckBox("インポート時と同じ設定を使う");
-    childBox.add(sameAsNewEntriesChkBx);
-    zipOnMoveChkBx = new JCheckBox("未圧縮エントリはzipする");
-    childBox.add(zipOnMoveChkBx);
-    childBox.add(Box.createHorizontalGlue());
-
-    childBox = Box.createHorizontalBox();
-    box.add(childBox);
-    useChildDirOnMoveChkBx = new JCheckBox("子ディレクトリを使用する");
-    childBox.add(useChildDirOnMoveChkBx);
-    childBox.add(new JLabel(" 接頭辞:"));
-    childDirPrefixOnMoveField = new JTextField(8);
-    childDirPrefixOnMoveField.setMaximumSize(getPreferredSize());
-    childBox.add(childDirPrefixOnMoveField);
-    childBox.add(Box.createHorizontalGlue());
-    childBox = Box.createHorizontalBox();
-    box.add(childBox);
-    moveDestDirOptionBG = new ButtonGroup();
-    splitBySizeOnMoveRB = new JRadioButton("容量で分ける");
-    moveDestDirOptionBG.add(splitBySizeOnMoveRB);
-    childBox.add(splitBySizeOnMoveRB);
-    childBox.add(new JLabel("(容量(MB):"));
-    splitSizeOnMoveField = new JTextField(4);
-    splitSizeOnMoveField.setMaximumSize(getPreferredSize());
-    childBox.add(splitSizeOnMoveField);
-    childBox.add(new JLabel(")"));
-    splitByNumberOnMoveRB = new JRadioButton("数で分ける");
-    moveDestDirOptionBG.add(splitByNumberOnMoveRB);
-    childBox.add(splitByNumberOnMoveRB);
-    childBox.add(splitByNumberOnMoveRB);
-    childBox.add(new JLabel("(分割数:"));
-    splitNumberOnMoveField = new JTextField(4);
-    splitNumberOnMoveField.setMaximumSize(getPreferredSize());
-    childBox.add(splitNumberOnMoveField);
-    childBox.add(new JLabel(")"));
-    childBox.add(Box.createHorizontalGlue());
-    splitStyleOnMoveBG = new ButtonGroup();
-    splitStyleOnMoveBG.add(splitBySizeOnMoveRB);
-    splitStyleOnMoveBG.add(splitByNumberOnMoveRB);
-    childBox.add(Box.createHorizontalGlue());
-
-    panel.add(Box.createVerticalStrut(8));
-
     // 画像ビューワ
     box = Box.createHorizontalBox();
     box.setBorder(new TitledBorder("画像ビューワ実行ファイルのパス"));
@@ -278,11 +216,6 @@ public class PrefsDialog extends JDialog {
     relatedComponentsMap = new HashMap<Component, Component[]>();
     relatedComponentsMap.put(useChildDirChkBx, new Component[] {childDirPrefixField, splitBySizeRB,
         splitSizeField, splitByNumberRB, splitNumberField});
-    relatedComponentsMap.put(sameAsNewEntriesChkBx,
-        new Component[] {useChildDirOnMoveChkBx, childDirPrefixOnMoveField, splitBySizeOnMoveRB,
-            splitSizeOnMoveField, splitByNumberOnMoveRB, splitNumberOnMoveField});
-    relatedComponentsMap.put(useChildDirOnMoveChkBx, new Component[] {childDirPrefixOnMoveField,
-        splitBySizeOnMoveRB, splitSizeOnMoveField, splitByNumberOnMoveRB, splitNumberOnMoveField});
 
     selectSaveDirButton.addActionListener(new ActionListener() {
 
@@ -322,52 +255,6 @@ public class PrefsDialog extends JDialog {
         Boolean selected = ((JRadioButton) e.getSource()).isSelected();
         toggleRelatedComponents(selected, new Component[] {splitNumberField},
             new Component[] {splitSizeField});
-      }
-    });
-    sameAsNewEntriesChkBx.addActionListener(new ActionListener() {
-
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        Component c = (Component) e.getSource();
-        Boolean selection = ((JCheckBox) c).isSelected();
-        setEnabledRelatedComponents(!selection, relatedComponentsMap.get(c));
-      }
-    });
-    zipOnMoveChkBx.addActionListener(new ActionListener() {
-
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        // TODO 自動生成されたメソッド・スタブ
-
-      }
-    });
-    useChildDirOnMoveChkBx.addActionListener(new ActionListener() {
-
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        Component c = (Component) e.getSource();
-        Boolean selection = ((JCheckBox) c).isSelected();
-        setEnabledRelatedComponents(selection, relatedComponentsMap.get(c));
-      }
-    });
-    splitBySizeOnMoveRB.addActionListener(new ActionListener() {
-
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        Boolean selected = ((JRadioButton) e.getSource()).isSelected();
-        toggleRelatedComponents(selected, new Component[] {splitSizeOnMoveField},
-            new Component[] {splitNumberOnMoveField});
-
-      }
-    });
-    splitByNumberOnMoveRB.addActionListener(new ActionListener() {
-
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        Boolean selected = ((JRadioButton) e.getSource()).isSelected();
-        toggleRelatedComponents(selected, new Component[] {splitNumberOnMoveField},
-            new Component[] {splitSizeOnMoveField});
-
       }
     });
     selectViewerExecutableButton.addActionListener(new ActionListener() {
@@ -426,21 +313,6 @@ public class PrefsDialog extends JDialog {
         new Component[] {splitSizeField});
     splitNumberField.setText(String.valueOf(appInfo.getChildDirSplitNumber()));
 
-    // 移動関連
-    sameAsNewEntriesChkBx.setSelected(appInfo.getSameAsImptOnMove());
-    zipOnMoveChkBx.setSelected(appInfo.getZipToStoreOnMove());
-    useChildDirChkBx.setSelected(appInfo.getUseChildDirOnMove());
-    splitBySizeOnMoveRB.setSelected(appInfo.getSplitChildDirBySizeOnMove());
-    splitByNumberOnMoveRB.setSelected(appInfo.getSplitChildDirByNumberOnMove());
-    toggleRelatedComponents(appInfo.getSplitChildDirByNumberOnMove(),
-        new Component[] {splitNumberOnMoveField}, new Component[] {splitSizeOnMoveField});
-    toggleRelatedComponents(appInfo.getSplitChildDirBySizeOnMove(),
-        new Component[] {splitSizeOnMoveField}, new Component[] {splitNumberOnMoveField});
-    setEnabledRelatedComponents(appInfo.getUseChildDirOnMove(),
-        relatedComponentsMap.get(useChildDirChkBx));
-    setEnabledRelatedComponents(!appInfo.getSameAsImptOnMove(),
-        relatedComponentsMap.get(sameAsNewEntriesChkBx));
-
     // ビューワパス
     viewerPathField.setText(appInfo.getViewerPath());
 
@@ -469,15 +341,6 @@ public class PrefsDialog extends JDialog {
     appInfo.setChildDirSplitSize(getIntFromTF(splitSizeField));
     appInfo.setSplitChildDirByNumber(splitByNumberRB.isSelected());
     appInfo.setChildDirSplitNumber(getIntFromTF(splitNumberField));
-
-    // 移動関連
-    appInfo.setUseChildDirOnMove(useChildDirOnMoveChkBx.isSelected());
-    appInfo.setZipToStoreOnMove(zipOnMoveChkBx.isSelected());
-    appInfo.setUseChildDirOnMove(useChildDirOnMoveChkBx.isSelected());
-    appInfo.setSplitChildDirBySizeOnMove(splitBySizeOnMoveRB.isSelected());
-    appInfo.setChildDirSplitSizeOnMove(getIntFromTF(splitSizeOnMoveField));
-    appInfo.setSplitChildDirByNumberOnMove(splitByNumberOnMoveRB.isSelected());
-    appInfo.setChildDirSplitNumberOnMove(getIntFromTF(splitNumberOnMoveField));
 
     // ビューワパス
     appInfo.setViewerPath(emptyToNull(viewerPathField));
@@ -523,7 +386,7 @@ public class PrefsDialog extends JDialog {
     }
   }
 
-  private String emptyToNull(JTextField textField) {
+  public static String emptyToNull(JTextField textField) {
     String string = textField.getText();
     if (string.equals("")) {
       return null;
@@ -532,7 +395,7 @@ public class PrefsDialog extends JDialog {
     }
   }
 
-  private Integer getIntFromTF(JTextField textField) {
+  public static Integer getIntFromTF(JTextField textField) {
     String string = textField.getText();
     Integer integer;
     try {
