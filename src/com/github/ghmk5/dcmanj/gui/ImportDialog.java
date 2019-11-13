@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -38,7 +39,6 @@ import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -390,8 +390,7 @@ public class ImportDialog extends JDialog {
     progressMonitor.setMillisToDecideToPopup(5);
     progressMonitor.setProgress(min);
 
-    SwingWorker<Object, Object[]> importWorker =
-        new Worker<String>(this, progressMonitor, entryList, appInfo);
+    Worker importWorker = new Worker(this, progressMonitor, entryList, appInfo);
 
     importWorker.addPropertyChangeListener(new PropertyChangeListener() {
       @Override
@@ -403,6 +402,21 @@ public class ImportDialog extends JDialog {
     });
 
     importWorker.execute();
+    try {
+      for (Object object : importWorker.get()) {
+        entryMap.remove((String) object);
+      }
+      updateTable();
+    } catch (InterruptedException e) {
+      // TODO 自動生成された catch ブロック
+      JOptionPane.showMessageDialog(this, "インポート処理中に割り込みが発生しました", "インポートエラー",
+          JOptionPane.ERROR_MESSAGE);
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      JOptionPane.showMessageDialog(this, "インポート処理中に例外が発生しました", "インポートエラー",
+          JOptionPane.ERROR_MESSAGE);
+      e.printStackTrace();
+    }
 
   }
 
