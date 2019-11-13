@@ -10,7 +10,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import javax.swing.JOptionPane;
@@ -21,13 +20,13 @@ import com.github.ghmk5.dcmanj.gui.ImportDialog;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
 
-public class Worker<E> extends SwingWorker<Object, Object[]> {
+public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
 
   Window caller;
   ProgressMonitor progressMonitor;
   AppInfo appInfo;
+  ArrayList<Object> processedKeys;
   ArrayList<Entry> entryList;
-  HashMap<E, Entry> entryMap;
   int max = 100;
   int progressPart;
   int totalProgress = 0;
@@ -48,14 +47,12 @@ public class Worker<E> extends SwingWorker<Object, Object[]> {
     this.entryList = entryList;
     this.appInfo = appInfo;
     progressPart = max / entryList.size();
+    processedKeys = new ArrayList<Object>();
     entriesCouldntZip = new ArrayList<Entry>();
     entriesOfIllegalType = new ArrayList<Entry>();
     entriesCouldntMove = new ArrayList<Entry>();
     entriesCouldntInsert = new ArrayList<Entry>();
     dbFile = new File(appInfo.getDbFilePath());
-    if (caller instanceof ImportDialog) {
-      this.entryMap = (HashMap<E, Entry>) ((ImportDialog) caller).getEntryMap();
-    }
   }
 
   void setFProgress(float f) {
@@ -63,7 +60,7 @@ public class Worker<E> extends SwingWorker<Object, Object[]> {
   }
 
   @Override
-  protected Object doInBackground() {
+  protected ArrayList<Object> doInBackground() {
     File srcFile;
     File saveDir;
     String newFilename;
@@ -167,9 +164,12 @@ public class Worker<E> extends SwingWorker<Object, Object[]> {
         }
       }
 
-      // entryMapからインポート済みのエントリを除去
-      // TODO 外に出す?
-      entryMap.remove(entry.getPath().toFile().getName());
+      // 処理済みエントリに対応する呼び出し元entryMapのキーを登録
+      if (caller instanceof ImportDialog) {
+        processedKeys.add(entry.getPath().toFile().getName());
+      } else {
+        processedKeys.add(entry.getId());
+      }
 
       // Entryのサイズとパスを書き換え
       if (newFile.isFile()) {
@@ -198,7 +198,7 @@ public class Worker<E> extends SwingWorker<Object, Object[]> {
       publish(new Object[] {entry.getPath().toFile().getName(), processed, totalProgress});
 
     }
-    return entryList;
+    return processedKeys;
   }
 
   @Override
@@ -257,10 +257,6 @@ public class Worker<E> extends SwingWorker<Object, Object[]> {
 
       String message = stringBuilder.toString();
       JOptionPane.showMessageDialog(caller, message, "エラー", JOptionPane.ERROR_MESSAGE);
-    }
-    if (caller instanceof ImportDialog) {
-      ((ImportDialog) caller).setEntryMap((HashMap<String, Entry>) entryMap);
-      ((ImportDialog) caller).updateTable();
     }
     setProgress(max);
   }
