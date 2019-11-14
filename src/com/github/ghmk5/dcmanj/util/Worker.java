@@ -258,6 +258,10 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
       String message = stringBuilder.toString();
       JOptionPane.showMessageDialog(caller, message, "エラー", JOptionPane.ERROR_MESSAGE);
     }
+    if (caller instanceof ImportDialog) {
+      ((ImportDialog) caller).refreshMap(processedKeys);
+      ((ImportDialog) caller).updateTable();
+    }
     setProgress(max);
   }
 }
