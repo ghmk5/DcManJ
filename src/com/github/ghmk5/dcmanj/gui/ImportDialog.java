@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.zip.ZipException;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -288,6 +287,15 @@ public class ImportDialog extends JDialog {
   }
 
   /**
+   * entryMapから指定のキーを持つエントリを削除する(Worker内部で使用)
+   */
+  public void refreshMap(ArrayList<Object> processedKeys) {
+    for (Object key : processedKeys) {
+      entryMap.remove(key);
+    }
+  }
+
+  /**
    * 選択された行の保存名を更新する
    */
   private void refreshSelectedRows() {
@@ -402,21 +410,6 @@ public class ImportDialog extends JDialog {
     });
 
     importWorker.execute();
-    try {
-      for (Object object : importWorker.get()) {
-        entryMap.remove((String) object);
-      }
-      updateTable();
-    } catch (InterruptedException e) {
-      // TODO 自動生成された catch ブロック
-      JOptionPane.showMessageDialog(this, "インポート処理中に割り込みが発生しました", "インポートエラー",
-          JOptionPane.ERROR_MESSAGE);
-      e.printStackTrace();
-    } catch (ExecutionException e) {
-      JOptionPane.showMessageDialog(this, "インポート処理中に例外が発生しました", "インポートエラー",
-          JOptionPane.ERROR_MESSAGE);
-      e.printStackTrace();
-    }
 
   }
 
