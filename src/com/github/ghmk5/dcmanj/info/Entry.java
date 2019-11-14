@@ -476,11 +476,18 @@ public class Entry {
             }
             elementsToRemove.add(prePosition);
           }
+          if (prePosition.matches(".*成[年人].*")) {
+            adult = true;
+          }
           if (prePosition.contains("一般")) {
             adult = false;
           }
           if (prePosition.contains("雑誌")) {
             isMagazine = true;
+            elementsToRemove.add(prePosition);
+          }
+          if (prePosition.contains("小説")) {
+            isNovel = true;
             elementsToRemove.add(prePosition);
           }
         }
@@ -672,7 +679,13 @@ public class Entry {
         }
         break;
       case "novel":
-        sb.append("(小説)");
+        if (Objects.nonNull(adult)) {
+          if (adult) {
+            sb.append("(成年小説) [");
+          } else {
+            sb.append("(一般小説) [");
+          }
+        }
         if (Objects.nonNull(author)) {
           sb.append(author + "] ");
         } else {
