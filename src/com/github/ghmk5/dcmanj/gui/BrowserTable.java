@@ -216,6 +216,12 @@ public class BrowserTable extends ExtendedTable {
           attrDialog.setModal(true);
           attrDialog.setVisible(true);
           updateDB(entryList);
+          for (Entry entry : entryList) {
+            Entry entryInMap = entryMap.get(entry.getId());
+            if (Objects.nonNull(entryInMap)) {
+              entryMap.put(entry.getId(), entry);
+            }
+          }
           updateSelectedRows();
         }
       };
@@ -552,50 +558,34 @@ public class BrowserTable extends ExtendedTable {
   private void updateSelectedRows() {
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
     Integer rowID;
-    String sql = "select rowid, * from magdb where rowid = String.valueOf(rowID);";
     Entry entry;
-    try {
-      Connection connection = DriverManager.getConnection(main.conArg);
-      Statement statement;
-      ResultSet resultSet;
-      int columnIdx;
-      TableModel model = getModel();
+    int columnIdx;
+    TableModel model = getModel();
 
-      for (int tableRowIdx : getSelectedRows()) {
-        tableRowIdx = convertRowIndexToModel(tableRowIdx);
-        rowID = (Integer) model.getValueAt(tableRowIdx, columnModel.getColumnIndex("ID"));
-        sql = "select rowid, * from magdb where rowid = " + String.valueOf(rowID) + ";";
-        statement = connection.createStatement();
-        resultSet = statement.executeQuery(sql);
-        entry = new Entry(resultSet);
+    for (int tableRowIdx : getSelectedRows()) {
+      tableRowIdx = convertRowIndexToModel(tableRowIdx);
+      rowID = (Integer) model.getValueAt(tableRowIdx, columnModel.getColumnIndex("ID"));
+      entry = entryMap.get(rowID);
 
-        // tableで表示されているカラムのindexと、データモデルのカラムindexは異なる(場合がある)
-        // データモデルのカラム全てを表示しており、かつカラムの順番を入れ替えていない場合は一致するが、
-        // ここでやっているようにカラムの一部を非表示にしていたり、カラムの動的な入れ替えを許可していたりすると
-        // 食い違いが生じる
-        // ColumnModel.getColumnIndex()で取得するインデックスはテーブルで表示中の列順を示すものであり、
-        // TableModel.setValueAt()で指定すべきはデータモデルにおける列順であって、これを得るためには
-        // JTable.convertColumnIndexToModelメソッドで変換してやる必要がある
-        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("種別"));
-        model.setValueAt(entry.getType(), tableRowIdx, columnIdx);
-        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("成"));
-        model.setValueAt(entry.getAdult(), tableRowIdx, columnIdx);
-        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("タイトル"));
-        model.setValueAt(entry.getEntryTitle(), tableRowIdx, columnIdx);
-        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("頁数"));
-        model.setValueAt(entry.getPages(), tableRowIdx, columnIdx);
-        columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("容量"));
-        model.setValueAt(String.format("%.2f", entry.getSize()), tableRowIdx, columnIdx);
-
-        resultSet.close();
-        statement.close();
-      }
-
-      connection.close();
-    } catch (SQLException e) {
-      Util.showErrorMessage(browserWindow, e, sql);
-      e.printStackTrace();
+      // tableで表示されているカラムのindexと、データモデルのカラムindexは異なる(場合がある)
+      // データモデルのカラム全てを表示しており、かつカラムの順番を入れ替えていない場合は一致するが、
+      // ここでやっているようにカラムの一部を非表示にしていたり、カラムの動的な入れ替えを許可していたりすると
+      // 食い違いが生じる
+      // ColumnModel.getColumnIndex()で取得するインデックスはテーブルで表示中の列順を示すものであり、
+      // TableModel.setValueAt()で指定すべきはデータモデルにおける列順であって、これを得るためには
+      // JTable.convertColumnIndexToModelメソッドで変換してやる必要がある
+      columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("種別"));
+      model.setValueAt(entry.getType(), tableRowIdx, columnIdx);
+      columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("成"));
+      model.setValueAt(entry.getAdult(), tableRowIdx, columnIdx);
+      columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("タイトル"));
+      model.setValueAt(entry.getEntryTitle(), tableRowIdx, columnIdx);
+      columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("頁数"));
+      model.setValueAt(entry.getPages(), tableRowIdx, columnIdx);
+      columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("容量"));
+      model.setValueAt(String.format("%.2f", entry.getSize()), tableRowIdx, columnIdx);
     }
+
   }
 
   /**
