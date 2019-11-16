@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
@@ -33,6 +34,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import org.apache.commons.io.FileUtils;
+import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.main.DcManJ;
 import com.github.ghmk5.dcmanj.util.Util;
@@ -185,13 +187,13 @@ public class BrowserTable extends ExtendedTable {
 
       copyMenu = new JMenu("クリップボードにコピー");
       add(copyMenu);
-      copyAuthor = new copyValue(browserTable, "author", "著者名");
+      copyAuthor = new CopyValue(browserTable, "author", "著者名");
       copyMenu.add(copyAuthor);
-      copyCircle = new copyValue(browserTable, "circle", "サークル名");
+      copyCircle = new CopyValue(browserTable, "circle", "サークル名");
       copyMenu.add(copyCircle);
-      copyTitle = new copyValue(browserTable, "title", "タイトル");
+      copyTitle = new CopyValue(browserTable, "title", "タイトル");
       copyMenu.add(copyTitle);
-      copyPath = new copyValue(browserTable, "path", "ファイルのパス");
+      copyPath = new CopyValue(browserTable, "path", "ファイルのパス");
       copyMenu.add(copyPath);
 
       manageMenu = new JMenu("エントリの管理");
@@ -302,17 +304,7 @@ public class BrowserTable extends ExtendedTable {
         }
       };
       manageMenu.add(removeEntriesAction);
-      moveEntriesAction = new AbstractAction("ファイルを移動...") {
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          ArrayList<Entry> entryList = browserTable.getEntries();
-          for (Entry entry : entryList) {
-
-          }
-
-        }
-      };
+      moveEntriesAction = new MoveEntries(browserWindow, main.appInfo);
       manageMenu.add(moveEntriesAction);
     }
 
@@ -412,12 +404,12 @@ public class BrowserTable extends ExtendedTable {
     }
   }
 
-  class copyValue extends AbstractAction {
+  class CopyValue extends AbstractAction {
 
     BrowserTable browserTable;
     String fieldName;
 
-    public copyValue(BrowserTable browserTable, String fieldName, String actionName) {
+    public CopyValue(BrowserTable browserTable, String fieldName, String actionName) {
       super(actionName);
       this.browserTable = browserTable;
       this.fieldName = fieldName;
@@ -446,6 +438,31 @@ public class BrowserTable extends ExtendedTable {
       // 通常なら文字列がnullの場合はコピーしないという処理を入れるべきところだが、ここではnullの場合は
       // メニューアイテムが無効化されるのでそのまま
       clipboard.setContents(new StringSelection(stringToCopy), null);
+    }
+
+  }
+
+  private class MoveEntries extends AbstractAction {
+
+    Window caller;
+    AppInfo appInfo;
+
+    public MoveEntries(Window caller, AppInfo appInfo) {
+      super("ファイルを移動...");
+      this.caller = caller;
+      this.appInfo = appInfo;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
+      ArrayList<Entry> entryList = getEntries();
+      MoveOptionDialog moveOptionDialog = new MoveOptionDialog(caller, appInfo, entryList);
+      Util.mapESCtoCancel(moveOptionDialog);
+      moveOptionDialog.setLocationRelativeTo(caller);
+      moveOptionDialog.setModal(true);
+      moveOptionDialog.setVisible(true);
+
     }
 
   }
