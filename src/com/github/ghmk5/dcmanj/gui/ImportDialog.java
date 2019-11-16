@@ -14,10 +14,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -411,35 +407,6 @@ public class ImportDialog extends JDialog {
 
     importWorker.execute();
 
-  }
-
-  /**
-   * 所与のエントリの情報を新規レコードとしてデータベースに挿入する
-   *
-   * @param entry
-   * @throws SQLException
-   */
-  public static void putNewRecord(Entry entry, File dbFile) throws SQLException {
-
-    Object[] values = {entry.getType(), entry.getAdult(), entry.getCircle(), entry.getAuthor(),
-        entry.getTitle(), entry.getSubtitle(), entry.getVolume(), entry.getIssue(), entry.getNote(),
-        entry.getPages(), entry.getSize(), entry.getPath().toString(),
-        entry.getDate().format(Util.DTF), entry.getOriginal(), entry.getRelease()};
-    String[] valueStrings = new String[values.length];
-    for (int i = 0; i < values.length; i++) {
-      valueStrings[i] = Util.quoteForSQL(values[i]);
-    }
-    StringBuilder stringBuilder = new StringBuilder("INSERT INTO magdb values(");
-    stringBuilder.append(String.join(",", valueStrings));
-    stringBuilder.append(");");
-    String sql = stringBuilder.toString();
-
-    String conArg = "jdbc:sqlite:" + dbFile.toPath();
-    Connection connection = DriverManager.getConnection(conArg);
-    Statement statement = connection.createStatement();
-    statement.execute(sql);
-    statement.close();
-    connection.close();
   }
 
   /**
