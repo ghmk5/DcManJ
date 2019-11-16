@@ -215,7 +215,7 @@ public class BrowserTable extends ExtendedTable {
           attrDialog.setLocation(main.appInfo.getRectAttr().getLocation());
           attrDialog.setModal(true);
           attrDialog.setVisible(true);
-          updateDB(entryList);
+          Util.updateDB(entryList, new File(main.appInfo.getDbFilePath()));
           for (Entry entry : entryList) {
             Entry entryInMap = entryMap.get(entry.getId());
             if (Objects.nonNull(entryInMap)) {
@@ -503,55 +503,6 @@ public class BrowserTable extends ExtendedTable {
       }
     }
     return listEntries;
-
-  }
-
-  /**
-   * 所与のリストに含まれるEntryについてデータベースレコードとの相違を調べ、<BR>
-   * 相違がある場合はレコードを更新する
-   *
-   * @param entryList
-   */
-  private void updateDB(ArrayList<Entry> entryList) {
-    String sql;
-    Entry entryInRecord;
-    ArrayList<String> setPredicates;
-    Connection connection;
-    Statement statement;
-    ResultSet resultSet;
-    for (Entry entry : entryList) {
-      sql = "select rowid, * from magdb where rowid is " + String.valueOf(entry.getId()) + ";";
-      try {
-        connection = DriverManager.getConnection(main.conArg);
-        statement = connection.createStatement();
-        resultSet = statement.executeQuery(sql);
-        entryInRecord = new Entry(resultSet);
-        resultSet.close();
-        statement.close();
-        if (entry.isIdenticalTo(entryInRecord)) {
-          continue;
-        } else {
-          setPredicates = new ArrayList<String>();
-          HashMap<String, Object> updatedValueMap = entry.getUpdatedValueMap(entryInRecord);
-          for (String columnName : updatedValueMap.keySet()) {
-            setPredicates
-                .add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
-          }
-          sql = "update magdb set "
-              + String.join(", ", setPredicates.toArray(new String[setPredicates.size()]));
-          sql += " where rowid = ";
-          sql += String.valueOf(entry.getId());
-          sql += ";";
-          statement = connection.createStatement();
-          statement.execute(sql);
-          statement.close();
-        }
-        connection.close();
-      } catch (SQLException e) {
-        Util.showErrorMessage(browserWindow, e, sql);
-        e.printStackTrace();
-      }
-    }
 
   }
 
