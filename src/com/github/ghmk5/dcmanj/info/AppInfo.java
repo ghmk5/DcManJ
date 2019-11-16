@@ -36,8 +36,12 @@ public class AppInfo {
   Integer childDirSplitNumber;
 
   // 移動関連
-  Boolean sameAsImptOnMove;
-  Boolean zipToStoreOnMove;
+  Boolean moveAsReImport;
+  Boolean selectDestDirOnMove;
+  String moveDestDir;
+  Boolean zipOnMove;
+  Boolean unzipOnMove;
+  Boolean renOnMove;
   Boolean useChildDirOnMove;
   String childlDirPrefixOnMove;
   Boolean splitChildDirBySizeOnMove;
@@ -73,6 +77,11 @@ public class AppInfo {
     this.rectAttr = (Rectangle) archRectangle.clone();
 
   }
+
+  // setter/getter
+
+
+  // 各種パス
 
   public String getParentPath() {
     if (Objects.isNull(parentPath)) {
@@ -125,6 +134,9 @@ public class AppInfo {
     this.dbFilePath = dbFilePath;
   }
 
+
+  // ウィンドウの位置とサイズ、テーブルカラム幅
+
   public Rectangle getRectMain() {
     return rectMain;
   }
@@ -149,6 +161,14 @@ public class AppInfo {
     this.rectImpt = rectImpt;
   }
 
+  public Rectangle getRectAttr() {
+    return rectAttr;
+  }
+
+  public void setRectAttr(Rectangle rectAttr) {
+    this.rectAttr = rectAttr;
+  }
+
   public HashMap<String, Integer> getColumnWidthMain() {
     return columnWidthMain;
   }
@@ -164,6 +184,9 @@ public class AppInfo {
   public void setColumnWidthImpt(HashMap<String, Integer> columnWidthIMap) {
     this.columnWidthImpt = columnWidthIMap;
   }
+
+
+  // インポート関連
 
   public String getImptDir() {
     if (Objects.isNull(imptDir)) {
@@ -185,56 +208,26 @@ public class AppInfo {
     this.namesToBeIgnored = namesToBeIgnored;
   }
 
-  public Rectangle getRectAttr() {
-    return rectAttr;
-  }
-
-  public void setRectAttr(Rectangle rectAttr) {
-    this.rectAttr = rectAttr;
-  }
-
   public String getSaveDir() {
     if (Objects.isNull(saveDir)) {
-      return System.getProperty("user.home");
-    } else {
-      return saveDir;
+      saveDir = System.getProperty("user.home");
     }
+    return saveDir;
   }
 
   public void setSaveDir(String saveDir) {
     this.saveDir = saveDir;
   }
 
-  public String getViewerPath() {
-    return viewerPath;
-  }
-
-  public void setViewerPath(String viewerPath) {
-    this.viewerPath = viewerPath;
-  }
-
-  public String[] getEvRegExStrings() {
-    if (Objects.nonNull(evRegExStrings)) {
-      return evRegExStrings;
-    } else {
-      return defaultEvRegExStrings;
+  public Boolean getZipToStore() {
+    if (Objects.isNull(zipToStore)) {
+      zipToStore = true;
     }
+    return zipToStore;
   }
 
-  public void setEvRegExStrings(String[] evRexExStrings) {
-    this.evRegExStrings = evRexExStrings;
-  }
-
-  public String[] getNoteRegExStrings() {
-    if (Objects.nonNull(noteRegExStrings)) {
-      return noteRegExStrings;
-    } else {
-      return defaultNoteRegExStrings;
-    }
-  }
-
-  public void setNoteRegExStrings(String[] noteRegExStrings) {
-    this.noteRegExStrings = noteRegExStrings;
+  public void setZipToStore(Boolean zipToStore) {
+    this.zipToStore = zipToStore;
   }
 
   public Boolean getUseChildDir() {
@@ -308,38 +301,74 @@ public class AppInfo {
     this.childDirSplitNumber = childDirSplitNumber;
   }
 
-  public Boolean getZipToStore() {
-    if (Objects.isNull(zipToStore)) {
-      return true;
-    } else {
-      return zipToStore;
+
+  // 移動関連
+  // 対応する値が保存されていない場合はインポート用設定の値を参照して返す(インポート用の値はデフォルト値の設定がある)
+
+  public Boolean getMoveAsReImport() {
+    if (Objects.isNull(moveAsReImport)) {
+      moveAsReImport = true;
     }
+    return moveAsReImport;
   }
 
-  public void setZipToStore(Boolean zipToStore) {
-    this.zipToStore = zipToStore;
+  public void setMoveAsReImport(Boolean sameAsImptOnMove) {
+    this.moveAsReImport = sameAsImptOnMove;
   }
 
-  public Boolean getSameAsImptOnMove() {
-    if (Objects.isNull(sameAsImptOnMove)) {
-      sameAsImptOnMove = true;
+  public Boolean getSelectDestDirOnMove() {
+    if (Objects.isNull(selectDestDirOnMove)) {
+      selectDestDirOnMove = true;
     }
-    return sameAsImptOnMove;
+    return selectDestDirOnMove;
   }
 
-  public void setSameAsImptOnMove(Boolean sameAsImptOnMove) {
-    this.sameAsImptOnMove = sameAsImptOnMove;
+  public void setSelectDestDirOnMove(Boolean selectDestDirOnMove) {
+    this.selectDestDirOnMove = selectDestDirOnMove;
   }
 
-  public Boolean getZipToStoreOnMove() {
-    if (Objects.isNull(zipToStoreOnMove)) {
-      zipToStoreOnMove = getZipToStore();
+  public String getMoveDestDir() {
+    if (Objects.isNull(moveDestDir)) {
+      moveDestDir = System.getProperty("user.home");
     }
-    return zipToStoreOnMove;
+    return moveDestDir;
   }
 
-  public void setZipToStoreOnMove(Boolean zipToStoreOnMove) {
-    this.zipToStoreOnMove = zipToStoreOnMove;
+  public void setMoveDestDir(String moveDestDir) {
+    this.moveDestDir = moveDestDir;
+  }
+
+  public Boolean getZipOnMove() {
+    if (Objects.isNull(zipOnMove)) {
+      zipOnMove = getZipToStore();
+    }
+    return zipOnMove;
+  }
+
+  public void setZipOnMove(Boolean zipToStoreOnMove) {
+    this.zipOnMove = zipToStoreOnMove;
+  }
+
+  public Boolean getUnzipOnMove() {
+    if (Objects.isNull(unzipOnMove)) {
+      unzipOnMove = false;
+    }
+    return unzipOnMove;
+  }
+
+  public void setUnzipOnMove(Boolean unzipOnMove) {
+    this.unzipOnMove = unzipOnMove;
+  }
+
+  public Boolean getRenOnMove() {
+    if (Objects.isNull(renOnMove)) {
+      renOnMove = true;
+    }
+    return renOnMove;
+  }
+
+  public void setRenOnMove(Boolean renOnMove) {
+    this.renOnMove = renOnMove;
   }
 
   public Boolean getUseChildDirOnMove() {
@@ -406,6 +435,44 @@ public class AppInfo {
 
   public void setChildDirSplitNumberOnMove(Integer childDirSplitNumberOnMove) {
     this.childDirSplitNumberOnMove = childDirSplitNumberOnMove;
+  }
+
+
+  // ビューワ
+
+  public String getViewerPath() {
+    return viewerPath;
+  }
+
+  public void setViewerPath(String viewerPath) {
+    this.viewerPath = viewerPath;
+  }
+
+
+  // パーサ
+
+  public String[] getEvRegExStrings() {
+    if (Objects.nonNull(evRegExStrings)) {
+      return evRegExStrings;
+    } else {
+      return defaultEvRegExStrings;
+    }
+  }
+
+  public void setEvRegExStrings(String[] evRexExStrings) {
+    this.evRegExStrings = evRexExStrings;
+  }
+
+  public String[] getNoteRegExStrings() {
+    if (Objects.nonNull(noteRegExStrings)) {
+      return noteRegExStrings;
+    } else {
+      return defaultNoteRegExStrings;
+    }
+  }
+
+  public void setNoteRegExStrings(String[] noteRegExStrings) {
+    this.noteRegExStrings = noteRegExStrings;
   }
 
   public String[] getDefaultEvRegExStrings() {
