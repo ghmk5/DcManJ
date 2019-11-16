@@ -16,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.ProgressMonitor;
 import javax.swing.SwingWorker;
 import org.apache.commons.io.FileUtils;
+import com.github.ghmk5.dcmanj.gui.BrowserWindow;
 import com.github.ghmk5.dcmanj.gui.ImportDialog;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
@@ -35,8 +36,11 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
   MagZip zipper;
   ArrayList<Entry> entriesCouldntZip;
   ArrayList<Entry> entriesOfIllegalType;
+  ArrayList<Entry> entriesWithNameDuplicated;
+  ArrayList<Entry> entriesNoChangeInReImport;
   ArrayList<Entry> entriesCouldntMove;
   ArrayList<Entry> entriesCouldntInsert;
+  ArrayList<Entry> entriesCouldntUpdate;
   File dbFile;
 
   public Worker(Window caller, ProgressMonitor progressMonitor, ArrayList<Entry> entryList,
@@ -50,8 +54,11 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
     processedKeys = new ArrayList<Object>();
     entriesCouldntZip = new ArrayList<Entry>();
     entriesOfIllegalType = new ArrayList<Entry>();
+    entriesWithNameDuplicated = new ArrayList<Entry>();
+    entriesNoChangeInReImport = new ArrayList<Entry>();
     entriesCouldntMove = new ArrayList<Entry>();
     entriesCouldntInsert = new ArrayList<Entry>();
+    entriesCouldntUpdate = new ArrayList<Entry>();
     dbFile = new File(appInfo.getDbFilePath());
   }
 
@@ -67,8 +74,15 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
     File newFile;
     Double newSize;
 
+    Boolean isZipped;
+    Boolean isUnZipped;
+    Boolean isRenamed;
 
     for (Entry entry : entryList) {
+
+      isZipped = false;
+      isUnZipped = false;
+      isRenamed = false;
 
       if (progressMonitor.isCanceled()) {
         progressMonitor.close();
@@ -82,29 +96,53 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
 
       publish(new Object[] {entry.getPath().toFile().getName(), processed, totalProgress});
 
-      // entryをzipして保管するオプションが選択されている && 元がディレクトリの場合は一時ファイルにzipし、移動元を一時ファイルに切り替える
-      if (appInfo.getZipToStore() && srcFile.isDirectory()) {
-        // 一時ファイルとしてzip
-        zipper = new MagZip();
-        zipper.addPropertyChangeListener(new PropertyChangeListener() {
+      if (srcFile.isFile()) {
+        if (caller instanceof BrowserWindow) {
+          // 移動処理であり、移動時にunzipするオプションが選択されている場合のみ一時ファイルとしてunzipし、移動元を一時ファイルに切り替える
+          if (!appInfo.getMoveAsReImport() && appInfo.getUnzipOnMove()
+              && srcFile.getName().matches(".+\\.[zZ][iI][pP]$")) {
+            isUnZipped = true;
+            // try {
+            // ZipFile zipFile = new ZipFile(srcFile);
+            // // TODO UNZIPクラスを実装する必要がある
+            // } catch (IOException e) {
+            // // TODO 自動生成された catch ブロック
+            // e.printStackTrace();
+            // }
+          }
+        }
+      } else if (srcFile.isDirectory()) {
+        // 元ファイルがディレクトリ
+        // 新規インポートであり、zipして保存オプションが選択されている
+        // または 移動処理であり、再インポートオプションと(インポート時)zipして保存オプションが選択されている
+        // または 移動処理であり、zipして移動オプションが選択されている
+        // 以上の条件に該当する場合、一時ファイルにzipし、移動元を一時ファイルに切り替える
+        if ((caller instanceof ImportDialog && appInfo.getZipToStore())
+            || (caller instanceof BrowserWindow && appInfo.getZipOnMove())
+            || (caller instanceof BrowserWindow && appInfo.getMoveAsReImport()
+                && appInfo.getZipToStore())) {
+          isZipped = true;
+          zipper = new MagZip();
+          zipper.addPropertyChangeListener(new PropertyChangeListener() {
 
-          @Override
-          public void propertyChange(PropertyChangeEvent evt) {
-            if ("progress".equals(evt.getPropertyName())) {
-              if (evt.getNewValue() instanceof Float) {
-                setFProgress((float) evt.getNewValue());
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+              if ("progress".equals(evt.getPropertyName())) {
+                if (evt.getNewValue() instanceof Float) {
+                  setFProgress((float) evt.getNewValue());
+                }
               }
             }
+          });
+          try {
+            srcFile = zipper.zipToTmp(srcFile, "DcManJTMP", ".zip");
+          } catch (IOException e) {
+            // 一時ファイルにzipできなかった場合
+            entriesCouldntZip.add(entry);
+            continue;
           }
-        });
-        try {
-          srcFile = zipper.zipToTmp(srcFile, "DcManJTMP", ".zip");
-        } catch (IOException e) {
-          // 一時ファイルにzipできなかった場合
-          entriesCouldntZip.add(entry);
-          continue;
         }
-      } else if (!srcFile.isDirectory() && !srcFile.isFile()) {
+      } else {
         // 元ファイルが存在しないか、ファイルでもディレクトリでもなかった場合
         entriesOfIllegalType.add(entry);
         continue;
@@ -112,11 +150,11 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
       // 元がディレクトリでzipして保管オブションが選択されていない場合はそのままここに来る
 
       // 保存先ディレクトリを設定
-      if (Objects.isNull(entry.getId())) { // インポートの場合
-        saveDir = Util.prepSaveDir(appInfo, srcFile);
+      if ((caller instanceof ImportDialog)
+          || (caller instanceof BrowserWindow && appInfo.getMoveAsReImport())) { // インポートの場合
+        saveDir = Util.prepSaveDir(appInfo, srcFile, true);
       } else { // 移動の場合
-        // TODO 適切な保存先を返す処理
-        saveDir = Util.prepSaveDir(appInfo, srcFile);
+        saveDir = Util.prepSaveDir(appInfo, srcFile, false);
       }
 
       // 保存先のFileインスタンスを生成
@@ -125,9 +163,27 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
         newFilename += ".zip";
       }
       newFile = new File(saveDir, newFilename);
+      if (!srcFile.getName().equals(newFilename)) {
+        isRenamed = true;
+      }
 
-      // 同名のエントリが既に存在する場合、後置付随詞群に"再"を付け加えて再生成
+      // 再インポートで圧縮/展開/ファイル名修正のいずれも発生しない場合、リストに入れておいてスキップ
+      if (caller instanceof BrowserWindow && appInfo.getMoveAsReImport() && !isZipped && !isUnZipped
+          && !isRenamed && srcFile.getAbsolutePath().equals(newFile.getAbsolutePath())) {
+        entriesNoChangeInReImport.add(entry);
+        continue;
+      }
+
+      // 同名のエントリが既に存在する場合
       if (newFile.exists()) {
+        // 移動処理で移動先を指定しない(圧縮/展開/再命名のみ行う設定でなにもやることがなかった)場合
+        // または再インポート指定で移動を伴わなかった場合、なにもせずスキップ
+        if ((caller instanceof BrowserWindow) && !appInfo.getSelectDestDirOnMove()) {
+          continue;
+        }
+
+        // インポート/再インポート/移動で偶然にファイル名が被った場合、後置付随詞群に"再"を付け加えて再生成
+        entriesWithNameDuplicated.add(entry);
         String note = entry.getNote();
         if (Objects.nonNull(note)) {
           ArrayList<String> noteAsList =
@@ -153,15 +209,23 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
         continue;
       }
 
-      // 元がディレクトリでzipして保存した場合は元のディレクトリを削除
-      // TODO 移動の場合の判断分岐
-      if (appInfo.getZipToStore() && entry.getPath().toFile().isDirectory()) {
+      // 圧縮/展開したため元のディレクトリを削除する必要がある場合の処理
+      if (isZipped) {
+        // 元がディレクトリで圧縮した場合
         try {
           FileUtils.deleteDirectory(entry.getPath().toFile());
         } catch (IOException e) {
           entriesCouldntMove.add(entry);
           continue;
         }
+      } else if (isUnZipped) {
+        // 元がzipファイルで展開した場合
+        // try {
+        // Files.delete(entry.getPath());
+        // } catch (IOException e) {
+        // entriesCouldntMove.add(entry);
+        // continue;
+        // }
       }
 
       // 処理済みエントリに対応する呼び出し元entryMapのキーを登録
@@ -184,7 +248,7 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
       // Entryの内容をデータベースに反映
       if (Objects.isNull(entry.getId())) { // インポートの場合
         try {
-          ImportDialog.putNewRecord(entry, dbFile);
+          Util.putNewRecord(entry, dbFile);
           setProgress(partMax);
           totalProgress = partMax;
         } catch (SQLException e) {
@@ -192,7 +256,14 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
           continue;
         }
       } else {
-        // TODO 移動の場合のSQL文生成と実行
+        ArrayList<Entry> entriesToUpdate = new ArrayList<Entry>();
+        entriesToUpdate.add(entry);
+        try {
+          Util.updateDB(entriesToUpdate, dbFile);
+        } catch (SQLException e) {
+          entriesCouldntUpdate.add(entry);
+          continue;
+        }
       }
 
       publish(new Object[] {entry.getPath().toFile().getName(), processed, totalProgress});
@@ -216,7 +287,8 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
   @Override
   protected void done() {
     if (entriesOfIllegalType.size() > 0 || entriesCouldntZip.size() > 0
-        || entriesCouldntMove.size() > 0 || entriesCouldntInsert.size() > 0) {
+        || entriesCouldntMove.size() > 0 || entriesCouldntInsert.size() > 0
+        || entriesCouldntUpdate.size() > 0) {
       StringBuilder stringBuilder = new StringBuilder("処理中にエラーが発生しました\n\n");
       if (entriesOfIllegalType.size() > 0) {
         stringBuilder.append("  以下のエントリはファイルが存在しないか、あるいはファイルでもディレクトリでもないため処理できません\n");
@@ -254,13 +326,50 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
         }
         stringBuilder.append("\n");
       }
-
+      if (entriesCouldntInsert.size() > 0) {
+        stringBuilder.append("  以下のエントリの内容でデータベースを更新できませんでした(ファイル名もしくはデータベースファイルに問題?)\n");
+        for (Entry entry : entriesCouldntUpdate) {
+          stringBuilder.append("    ");
+          stringBuilder.append(entry.getPath().toString());
+          stringBuilder.append("\n");
+        }
+        stringBuilder.append("\n");
+      }
       String message = stringBuilder.toString();
       JOptionPane.showMessageDialog(caller, message, "エラー", JOptionPane.ERROR_MESSAGE);
     }
+
+    // 同名ファイルが存在した場合 および 再インポート指定で実質的変更がなかったためスキップされた場合
+    if (entriesWithNameDuplicated.size() > 0 || entriesNoChangeInReImport.size() > 0) {
+      StringBuilder stringBuilder = new StringBuilder();
+      if (entriesWithNameDuplicated.size() > 0) {
+        stringBuilder.append("以下のエントリは既に同名ファイルが存在したためファイル名末尾に(再)が付与されました\n");
+        for (Entry entry : entriesWithNameDuplicated) {
+          stringBuilder.append("  ");
+          stringBuilder.append(entry.getPath().toString());
+          stringBuilder.append("\n");
+        }
+        stringBuilder.append("\n");
+      }
+      if (entriesNoChangeInReImport.size() > 0) {
+        stringBuilder.append("以下のエントリは指定の処理内容で実質的変更を伴わなかったためスキップされました\n");
+        for (Entry entry : entriesNoChangeInReImport) {
+          stringBuilder.append("  ");
+          stringBuilder.append(entry.getPath().toString());
+          stringBuilder.append("\n");
+        }
+        stringBuilder.append("\n");
+      }
+      String message = stringBuilder.toString();
+      JOptionPane.showMessageDialog(caller, message, "情報", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // インポートの場合、ダイアログのテーブルを更新
     if (caller instanceof ImportDialog) {
       ((ImportDialog) caller).refreshMap(processedKeys);
       ((ImportDialog) caller).updateTable();
+    } else if (caller instanceof BrowserWindow) {
+      ((BrowserWindow) caller).refreshTable(entryList);
     }
     setProgress(max);
   }

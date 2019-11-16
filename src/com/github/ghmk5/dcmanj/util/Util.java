@@ -25,7 +25,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -397,6 +401,87 @@ public class Util {
   }
 
   /**
+   * 所与のエントリの情報を新規レコードとしてデータベースに挿入する
+   *
+   * @param entry
+   * @throws SQLException
+   */
+  public static void putNewRecord(com.github.ghmk5.dcmanj.info.Entry entry, File dbFile)
+      throws SQLException {
+
+    Object[] values = {entry.getType(), entry.getAdult(), entry.getCircle(), entry.getAuthor(),
+        entry.getTitle(), entry.getSubtitle(), entry.getVolume(), entry.getIssue(), entry.getNote(),
+        entry.getPages(), entry.getSize(), entry.getPath().toString(),
+        entry.getDate().format(Util.DTF), entry.getOriginal(), entry.getRelease()};
+    String[] valueStrings = new String[values.length];
+    for (int i = 0; i < values.length; i++) {
+      valueStrings[i] = Util.quoteForSQL(values[i]);
+    }
+    StringBuilder stringBuilder = new StringBuilder("INSERT INTO magdb values(");
+    stringBuilder.append(String.join(",", valueStrings));
+    stringBuilder.append(");");
+    String sql = stringBuilder.toString();
+
+    String conArg = "jdbc:sqlite:" + dbFile.toPath();
+    Connection connection = DriverManager.getConnection(conArg);
+    Statement statement = connection.createStatement();
+    statement.execute(sql);
+    statement.close();
+    connection.close();
+  }
+
+  /**
+   * 所与のリストに含まれるEntryについてデータベースレコードとの相違を調べ、<BR>
+   * 相違がある場合はレコードを更新する
+   *
+   * @param entryList
+   * @param dbFile
+   */
+  public static void updateDB(ArrayList<com.github.ghmk5.dcmanj.info.Entry> entryList, File dbFile)
+      throws SQLException {
+    String sql;
+    com.github.ghmk5.dcmanj.info.Entry entryInRecord;
+    ArrayList<String> setPredicates;
+    Connection connection;
+    Statement statement;
+    ResultSet resultSet;
+    for (com.github.ghmk5.dcmanj.info.Entry entry : entryList) {
+      sql = "select rowid, * from magdb where rowid is " + String.valueOf(entry.getId()) + ";";
+      try {
+        String conArg = "jdbc:sqlite:" + dbFile.toPath();
+        connection = DriverManager.getConnection(conArg);
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(sql);
+        entryInRecord = new com.github.ghmk5.dcmanj.info.Entry(resultSet);
+        resultSet.close();
+        statement.close();
+        if (entry.isIdenticalTo(entryInRecord)) {
+          continue;
+        } else {
+          setPredicates = new ArrayList<String>();
+          HashMap<String, Object> updatedValueMap = entry.getUpdatedValueMap(entryInRecord);
+          for (String columnName : updatedValueMap.keySet()) {
+            setPredicates
+                .add(columnName + " = " + Util.quoteForSQL(updatedValueMap.get(columnName)));
+          }
+          sql = "update magdb set "
+              + String.join(", ", setPredicates.toArray(new String[setPredicates.size()]));
+          sql += " where rowid = ";
+          sql += String.valueOf(entry.getId());
+          sql += ";";
+          statement = connection.createStatement();
+          statement.execute(sql);
+          statement.close();
+        }
+        connection.close();
+      } catch (SQLException e) {
+        throw new SQLException(sql);
+      }
+    }
+
+  }
+
+  /**
    * Runtime.exec()で発生したIOException、またはSQLステートメント実行時に発生したSQLExceptionに対する<BR>
    * エラーメッセージを表示する
    *
@@ -547,17 +632,31 @@ public class Util {
    *
    * @param appInfo 分割条件やディレクトリ名接頭辞を読み出す
    * @param srcFile 保存するファイルまたはディレクトリ
+   * @param isImport 新規エントリとしてインポートもしくはインポート扱いの移動時true 他false
    * @return 保存先ディレクトリのFileインスタンス
    */
-  public static File prepSaveDir(AppInfo appInfo, File srcFile) {
+  public static File prepSaveDir(AppInfo appInfo, File srcFile, Boolean isImport) {
 
-    File parentDir = new File(appInfo.getSaveDir());
-    String saveDirPrefix = appInfo.getChildDirPrefix();
-    File saveDir = getDirToSave(parentDir, saveDirPrefix);
+    File parentDir;
+    String saveDirPrefix;
+    File saveDir;
+
+    if (isImport) {
+      parentDir = new File(appInfo.getSaveDir());
+      saveDirPrefix = appInfo.getChildDirPrefix();
+      saveDir = getDirToSave(parentDir, saveDirPrefix);
+    } else if (appInfo.getSelectDestDirOnMove()) {
+      parentDir = new File(appInfo.getMoveDestDir());
+      saveDirPrefix = appInfo.getChildlDirPrefixOnMove();
+      saveDir = getDirToSave(parentDir, saveDirPrefix);
+    } else {
+      saveDir = srcFile.getParentFile();
+    }
 
     long dirSizeLimit = appInfo.getChildDirSplitSize();
     dirSizeLimit = dirSizeLimit * 1024 * 1024;
-    if (appInfo.getSplitChildDirBySize()) {
+    if ((isImport && appInfo.getSplitChildDirBySize())
+        || (!isImport && appInfo.getSplitChildDirBySizeOnMove())) {
       long dirSize = FileUtils.sizeOfDirectory(saveDir);
       long sizeToMove;
       if (srcFile.isFile()) {
@@ -568,7 +667,8 @@ public class Util {
       if ((sizeToMove + dirSize) > dirSizeLimit) {
         saveDir = getNewSaveDir(saveDir);
       }
-    } else {
+    } else if ((isImport && appInfo.getSplitChildDirByNumber())
+        || (!isImport && appInfo.getSplitChildDirByNumberOnMove())) {
       int numberSaved = saveDir.listFiles().length;
       if ((numberSaved + 1) > appInfo.getChildDirSplitNumber()) {
         saveDir = getNewSaveDir(saveDir);

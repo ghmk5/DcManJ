@@ -215,7 +215,12 @@ public class BrowserTable extends ExtendedTable {
           attrDialog.setLocation(main.appInfo.getRectAttr().getLocation());
           attrDialog.setModal(true);
           attrDialog.setVisible(true);
-          Util.updateDB(entryList, new File(main.appInfo.getDbFilePath()));
+          try {
+            Util.updateDB(entryList, new File(main.appInfo.getDbFilePath()));
+          } catch (SQLException e1) {
+            Util.showErrorMessage(null, e1, e1.getMessage());
+            e1.printStackTrace();
+          }
           for (Entry entry : entryList) {
             Entry entryInMap = entryMap.get(entry.getId());
             if (Objects.nonNull(entryInMap)) {
@@ -506,7 +511,17 @@ public class BrowserTable extends ExtendedTable {
 
   }
 
-  private void updateSelectedRows() {
+  public void refreshMap(ArrayList<Entry> entryList) {
+    Entry entryInMap;
+    for (Entry entry : entryList) {
+      entryInMap = entryMap.get(entry.getId());
+      if (Objects.nonNull(entryInMap)) {
+        entryMap.put(entry.getId(), entry);
+      }
+    }
+  }
+
+  public void updateSelectedRows() {
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
     Integer rowID;
     Entry entry;

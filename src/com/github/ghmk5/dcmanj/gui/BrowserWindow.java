@@ -39,6 +39,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.JTextComponent;
+import com.github.ghmk5.dcmanj.info.Entry;
 import com.github.ghmk5.dcmanj.main.DcManJ;
 import com.github.ghmk5.dcmanj.util.Util;
 
@@ -359,6 +360,11 @@ public class BrowserWindow extends JFrame {
 
   public void refreshTable(String sql) {
     table.refresh(sql);
+  }
+
+  public void refreshTable(ArrayList<Entry> entryList) {
+    table.refreshMap(entryList);
+    table.updateSelectedRows();
   }
 
   class TextFieldContextMenu extends JPopupMenu {
