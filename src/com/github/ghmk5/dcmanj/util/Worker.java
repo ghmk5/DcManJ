@@ -5,6 +5,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -34,6 +35,7 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
   int partMax = 0;
   int processed = 0;
   MagZip zipper;
+  MagUnzip unzipper;
   ArrayList<Entry> entriesCouldntZip;
   ArrayList<Entry> entriesOfIllegalType;
   ArrayList<Entry> entriesWithNameDuplicated;
@@ -102,13 +104,26 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
           if (!appInfo.getMoveAsReImport() && appInfo.getUnzipOnMove()
               && srcFile.getName().matches(".+\\.[zZ][iI][pP]$")) {
             isUnZipped = true;
-            // try {
-            // ZipFile zipFile = new ZipFile(srcFile);
-            // // TODO UNZIPクラスを実装する必要がある
-            // } catch (IOException e) {
-            // // TODO 自動生成された catch ブロック
-            // e.printStackTrace();
-            // }
+
+            try {
+              unzipper = new MagUnzip(srcFile, new String[] {"MS932", "UTF-8"});
+              unzipper.addPropertyChangeListener(new PropertyChangeListener() {
+
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                  if ("progress".equals(evt.getPropertyName())) {
+                    if (evt.getNewValue() instanceof Float) {
+                      setFProgress((float) evt.getNewValue());
+                    }
+                  }
+                }
+              });
+              srcFile = unzipper.unzipToTmp(false);
+            } catch (IOException e) {
+              // 一時ファイルにunzipできなかった場合
+              entriesCouldntZip.add(entry);
+              continue;
+            }
           }
         }
       } else if (srcFile.isDirectory()) {
@@ -153,8 +168,10 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
       if ((caller instanceof ImportDialog)
           || (caller instanceof BrowserWindow && appInfo.getMoveAsReImport())) { // インポートの場合
         saveDir = Util.prepSaveDir(appInfo, srcFile, true);
-      } else { // 移動の場合
+      } else if (appInfo.getSelectDestDirOnMove()) { // 移動先を指定される場合
         saveDir = Util.prepSaveDir(appInfo, srcFile, false);
+      } else { // 移動先を指定せず、圧縮/展開/再命名だけ行う場合
+        saveDir = entry.getPath().getParent().toFile();
       }
 
       // 保存先のFileインスタンスを生成
@@ -178,7 +195,8 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
       if (newFile.exists()) {
         // 移動処理で移動先を指定しない(圧縮/展開/再命名のみ行う設定でなにもやることがなかった)場合
         // または再インポート指定で移動を伴わなかった場合、なにもせずスキップ
-        if ((caller instanceof BrowserWindow) && !appInfo.getSelectDestDirOnMove()) {
+        if ((caller instanceof BrowserWindow) && !appInfo.getSelectDestDirOnMove() && !isZipped
+            && !isUnZipped && !isRenamed) {
           continue;
         }
 
@@ -219,13 +237,14 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
           continue;
         }
       } else if (isUnZipped) {
-        // 元がzipファイルで展開した場合
-        // try {
-        // Files.delete(entry.getPath());
-        // } catch (IOException e) {
-        // entriesCouldntMove.add(entry);
-        // continue;
-        // }
+        try {
+          Files.delete(entry.getPath());
+        } catch (IOException e) {
+          // TODO ここでファイルが消せない問題
+          entriesCouldntMove.add(entry);
+          e.printStackTrace();
+          continue;
+        }
       }
 
       // 処理済みエントリに対応する呼び出し元entryMapのキーを登録
@@ -260,6 +279,8 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
         entriesToUpdate.add(entry);
         try {
           Util.updateDB(entriesToUpdate, dbFile);
+          setProgress(partMax);
+          totalProgress = partMax;
         } catch (SQLException e) {
           entriesCouldntUpdate.add(entry);
           continue;
@@ -300,7 +321,7 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
         stringBuilder.append("\n");
       }
       if (entriesCouldntZip.size() > 0) {
-        stringBuilder.append("  以下のファイルは圧縮できませんでした(ファイル名もしくは一時ファイル領域に問題?)\n");
+        stringBuilder.append("  以下のファイルは圧縮 / 展開できませんでした(ファイル名もしくは一時ファイル領域に問題?)\n");
         for (Entry entry : entriesCouldntZip) {
           stringBuilder.append("    ");
           stringBuilder.append(entry.getPath().toString());
