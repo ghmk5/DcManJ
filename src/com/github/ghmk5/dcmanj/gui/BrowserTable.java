@@ -75,7 +75,21 @@ public class BrowserTable extends ExtendedTable {
       if (!ready) {
         c.setForeground(Color.GRAY);
       } else {
-        c.setForeground(getForeground());
+        if (column == getColumnModel().getColumnIndex("タイトル")) {
+          if (entry.getPath().toString().matches(".+\\.[zZ][iI][pP]$")) {
+            c.setForeground(new Color(16, 16, 127));
+          } else {
+            c.setForeground(new Color(16, 63, 16));
+          }
+        } else if (column == getColumnModel().getColumnIndex("種別")) {
+          if (entry.getAdult()) {
+            c.setForeground(new Color(127, 16, 63));
+          } else {
+            c.setForeground(getForeground());
+          }
+        } else {
+          c.setForeground(getForeground());
+        }
       }
     } else {
       c.setForeground(getForeground());
@@ -118,7 +132,7 @@ public class BrowserTable extends ExtendedTable {
 
     // TableModelには入っているが表示しない列 -- 直接インデックスで指定すると、表示しない列の二つ目以降で番号がずれて分かりにくくなるので注意
     String[] columnsToHide =
-        {"サークル", "著者", "タイトル(素)", "副題", "巻号", "issue", "備考", "パス", "日付", "元ネタ", "発刊"};
+        {"成", "サークル", "著者", "タイトル(素)", "副題", "巻号", "issue", "備考", "パス", "日付", "元ネタ", "発刊"};
     for (String columnName : columnsToHide) {
       this.removeColumn(
           this.getColumnModel().getColumn(this.getColumnModel().getColumnIndex(columnName)));
@@ -542,8 +556,8 @@ public class BrowserTable extends ExtendedTable {
       // JTable.convertColumnIndexToModelメソッドで変換してやる必要がある
       columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("種別"));
       model.setValueAt(entry.getType(), tableRowIdx, columnIdx);
-      columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("成"));
-      model.setValueAt(entry.getAdult(), tableRowIdx, columnIdx);
+      // columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("成"));
+      // model.setValueAt(entry.getAdult(), tableRowIdx, columnIdx);
       columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("タイトル"));
       model.setValueAt(entry.getEntryTitle(), tableRowIdx, columnIdx);
       columnIdx = convertColumnIndexToModel(columnModel.getColumnIndex("頁数"));
