@@ -53,10 +53,10 @@ public class ImportDialog extends JDialog {
   HashMap<String, Entry> entryMap;
   ProgressMonitor progressMonitor;
 
-  public ImportDialog(BrowserWindow browserWindow)
+  public ImportDialog(BrowserWindow browserWindow, AppInfo appInfo)
       throws IllegalArgumentException, ZipException, IOException {
     this.browserWindow = browserWindow;
-    this.appInfo = browserWindow.main.appInfo;
+    this.appInfo = appInfo;
     this.dirPath = appInfo.getImptDir();
     this.imptDir = new File(dirPath);
     if (!imptDir.exists() || !imptDir.isDirectory() || !imptDir.canRead()) {

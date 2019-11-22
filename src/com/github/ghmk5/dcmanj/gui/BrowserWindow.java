@@ -275,7 +275,7 @@ public class BrowserWindow extends JFrame {
     public void actionPerformed(ActionEvent e) {
       ImportDialog importDialog;
       try {
-        importDialog = new ImportDialog(browserWindow);
+        importDialog = new ImportDialog(browserWindow, browserWindow.main.appInfo);
         Util.setRect(importDialog, browserWindow.main.appInfo.getRectImpt());
         importDialog.setVisible(true);
       } catch (IllegalArgumentException | IOException e1) {
