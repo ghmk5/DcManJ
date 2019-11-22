@@ -41,6 +41,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import com.github.ghmk5.dcmanj.info.AppInfo;
 import com.github.ghmk5.dcmanj.info.Entry;
+import com.github.ghmk5.dcmanj.main.DcManJ;
 import com.github.ghmk5.dcmanj.util.Util;
 import com.github.ghmk5.dcmanj.util.Worker;
 
@@ -145,8 +146,8 @@ public class ImportDialog extends JDialog {
       }
 
     };
-    table.getTableHeader().setFont(browserWindow.main.tableFont);
-    table.setFont(browserWindow.main.tableFont);
+    table.getTableHeader().setFont(DcManJ.TABLEFONT);
+    table.setFont(DcManJ.TABLEFONT);
     table.addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2) {

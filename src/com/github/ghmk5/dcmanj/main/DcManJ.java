@@ -22,11 +22,30 @@ public class DcManJ {
   public AppInfo appInfo;
   public ArrayList<BrowserWindow> listBrowserWindows;
   public File dbFile;
-  // public Connection sqlConnection;
-  // public Statement statement = null;
   public String conArg;
-  public Font tableFont;
 
+  public static Font TABLEFONT;
+
+  static {
+    // テーブルの表示に使うフォントを生成
+    try {
+      Font.createFont(Font.TRUETYPE_FONT,
+          DcManJ.class.getResourceAsStream("/data/VL-PGothic-Regular.ttf"));
+      // Font.createFont(Font.TRUETYPE_FONT,
+      // DcManJ.class.getResourceAsStream("/data/BIZ-UDGOTHICB.TTC"));
+      // Font.createFont(Font.TRUETYPE_FONT,
+      // DcManJ.class.getResourceAsStream("/data/mplus-2m-bold.ttf"));
+      // Font.createFont(Font.TRUETYPE_FONT,
+      // DcManJ.class.getResourceAsStream("/data/mplus-2m-medium.ttf"));
+      TABLEFONT = TABLEFONT.deriveFont(Font.BOLD, 11.0f);
+    } catch (FontFormatException e2) {
+      System.out.println("jar同梱フォントファイルが不正です");
+      e2.printStackTrace();
+    } catch (IOException e2) {
+      System.out.println("jar同梱フォントファイルが読み込めません");
+      e2.printStackTrace();
+    }
+  }
 
   public DcManJ() {}
 
@@ -56,12 +75,6 @@ public class DcManJ {
 
         Util.setRect(browserWindow, main.appInfo.getRectMain());
         browserWindow.refreshTable("select rowid, * from magdb order by rowid desc;");
-        // try {
-        // browserWindow.refreshTable("select rowid, * from magdb order by rowid desc;");
-        // } catch (SQLException e) {
-        // // TODO 自動生成された catch ブロック
-        // e.printStackTrace();
-        // }
         browserWindow.setVisible(true);
       }
     });
@@ -94,24 +107,9 @@ public class DcManJ {
     }
     conArg = "jdbc:sqlite:" + dbFile.toPath();
 
-    // テーブルの表示に使うフォントを生成
-    try {
-      tableFont = Font.createFont(Font.TRUETYPE_FONT,
-          // this.getClass().getResourceAsStream("/data/BIZ-UDGOTHICB.TTC"));
-          this.getClass().getResourceAsStream("/data/VL-PGothic-Regular.ttf"));
-      // this.getClass().getResourceAsStream("/data/mplus-2m-bold.ttf"));
-      // this.getClass().getResourceAsStream("/data/mplus-2m-medium.ttf"));
-      tableFont = tableFont.deriveFont(Font.BOLD, 11.0f);
-    } catch (FontFormatException e2) {
-      System.out.println("jar同梱フォントファイルが不正です");
-      e2.printStackTrace();
-    } catch (IOException e2) {
-      System.out.println("jar同梱フォントファイルが読み込めません");
-      e2.printStackTrace();
-    }
-
     // L&FをOSデフォルトに設定する(Windowsでは"Windows"、MacOSでは"MacOS"
     // これをやらないと、WindowsではMetalが使用される。MacOSでは無指定でMacOSが使用されるので関係ない
+    // Windows/Metalで良いならコメントアウトしておく
     // try {
     // UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
     // } catch (ClassNotFoundException | InstantiationException | IllegalAccessException

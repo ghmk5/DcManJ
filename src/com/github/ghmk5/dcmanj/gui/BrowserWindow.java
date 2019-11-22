@@ -152,7 +152,7 @@ public class BrowserWindow extends JFrame {
 
 
     JButton button = new JButton("全表示");
-    button.setFont(main.tableFont);
+    button.setFont(DcManJ.TABLEFONT);
     button.setToolTipText("種別と成人向けフラグのみを指定して検索");
     button.addActionListener(new ActionListener() {
 
@@ -182,8 +182,8 @@ public class BrowserWindow extends JFrame {
     panel.add(lowerPanel);
 
     table = new BrowserTable(main, this);
-    table.getTableHeader().setFont(main.tableFont);
-    table.setFont(main.tableFont);
+    table.getTableHeader().setFont(DcManJ.TABLEFONT);
+    table.setFont(DcManJ.TABLEFONT);
 
     HashMap<String, Integer> columnWidthMap = main.appInfo.getColumnWidthMain();
     if (Objects.nonNull(columnWidthMap)) {
