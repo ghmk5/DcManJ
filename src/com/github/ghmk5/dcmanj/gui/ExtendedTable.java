@@ -162,6 +162,7 @@ public class ExtendedTable extends JTable {
       throws IllegalArgumentException {
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) getColumnModel();
     int tableColumnIdx = columnModel.getColumnIndex(identifier);
+    tableColumnIdx = convertColumnIndexToModel(tableColumnIdx);
     ArrayList<Object> objectList = new ArrayList<Object>();
     for (int tableRowIdx : getSelectedRows()) {
       tableRowIdx = convertRowIndexToModel(tableRowIdx);
