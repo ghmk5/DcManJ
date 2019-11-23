@@ -26,6 +26,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -35,6 +36,7 @@ import javax.swing.ProgressMonitor;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -49,6 +51,14 @@ public class ImportDialog extends JDialog {
   BrowserWindow browserWindow;
   AppInfo appInfo;
   ExtendedTable table;
+  String[] tableHeaders = {"ID", "種別", "成", "サークル", "著者", "タイトル", "副題", "巻号", "issue", "元ファイル名",
+      "保存ファイル名", "備考", "頁数", "容量", "パス", "日付", "元ネタ", "発刊"};
+  // TableModelには入っているが表示しない列 -- 直接インデックスで指定すると、表示しない列の二つ目以降で番号がずれて分かりにくくなる
+  String[] columnsToHide = {"ID", "成", "パス", "日付", "発刊"};
+  private Class[] classesInRow =
+      {Integer.class, String.class, Boolean.class, String.class, String.class, String.class,
+          String.class, String.class, String.class, String.class, String.class, String.class,
+          Integer.class, Double.class, String.class, String.class, String.class, String.class};
   String dirPath;
   File imptDir;
   HashMap<String, Entry> entryMap;
@@ -129,7 +139,9 @@ public class ImportDialog extends JDialog {
       @Override
       public Component prepareRenderer(TableCellRenderer tcr, int row, int column) {
         Component c = super.prepareRenderer(tcr, row, column);
-        String filename = (String) getValueAt(row, 1);
+        int viewColumnIdx = getColumnModel().getColumnIndex("元ファイル名");
+        // viewColumnIdx = convertColumnIndexToModel(viewColumnIdx);
+        String filename = (String) getValueAt(row, viewColumnIdx);
         Entry entry = entryMap.get(filename);
         Boolean ready = null;
         if (Objects.nonNull(entry)) {
@@ -244,31 +256,60 @@ public class ImportDialog extends JDialog {
     // entryListの内容からデータを生成
     Entry entry;
     File srcFile;
+
     ArrayList<String[]> dataList = new ArrayList<String[]>();
     String[] rowData;
+
+    ArrayList<Object[]> rowList = new ArrayList<Object[]>();
+    Object[] row;
     for (String fileName : entryMap.keySet()) {
       entry = entryMap.get(fileName);
-      srcFile = entry.getPath().toFile();
-      rowData = new String[4];
-      if (srcFile.isFile()) {
-        rowData[0] = "file";
-      } else if (srcFile.isDirectory()) {
-        rowData[0] = "directory";
-      } else {
-        rowData[0] = "unknown (simlink?)";
-      }
-      rowData[1] = srcFile.getName();
-      rowData[2] = entry.getOriginal();
-      rowData[3] = entry.generateNameToSave();
-      dataList.add(rowData);
+
+      ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(entry.getRowData()));
+      list.set(9, entry.getPath().getFileName().toString());
+      list.add(10, entry.generateNameToSave());
+
+      row = list.toArray(new Object[list.size()]);
+      rowList.add(row);
+
     }
 
     // データモデルを生成し、テーブルに適用
-    String[] columnNames = {"type", "Current Name", "original", "Name to Store"};
-    String[][] data = dataList.toArray(new String[4][dataList.size()]);
-    DefaultTableModel model = new DefaultTableModel(data, columnNames);
-    model.setColumnIdentifiers(columnNames);
+    DefaultTableModel model;
+
+    Object[][] data = rowList.toArray(new Object[tableHeaders.length][rowList.size()]);
+    model = new DefaultTableModel(data, tableHeaders) {
+
+      // 各列が持つデータのクラスを指定
+      @Override
+      public Class getColumnClass(int columnIndex) {
+        switch (classesInRow[columnIndex].getSimpleName()) {
+          case "Integer":
+            return Integer.class;
+          case "String":
+            return String.class;
+          case "Boolean":
+            return Boolean.class;
+          default:
+            return super.getColumnClass(columnIndex);
+        }
+      }
+    };
+
+    model.setColumnIdentifiers(tableHeaders);
     table.setModel(model);
+
+    for (String columnName : columnsToHide) {
+      table.removeColumn(
+          table.getColumnModel().getColumn(table.getColumnModel().getColumnIndex(columnName)));
+    }
+
+    // "容量"列に右詰めのレンダラを設定
+    DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+    rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+    table.getColumnModel().getColumn(table.getColumnModel().getColumnIndex("容量"))
+        .setCellRenderer(rightRenderer);
+
     try {
       HashMap<String, Integer> columnWidthMap = appInfo.getColumnWidthImpt();
       if (Objects.nonNull(columnWidthMap)) {
@@ -277,6 +318,7 @@ public class ImportDialog extends JDialog {
     } catch (Exception e) {
 
     }
+
     table.setRowSorter(new TableRowSorter<>((DefaultTableModel) table.getModel()));
 
     // ソート順を再適用
@@ -293,29 +335,50 @@ public class ImportDialog extends JDialog {
   }
 
   /**
-   * 選択された行の保存名を更新する
+   * 選択された行をentryMapに記録されたentryの内容で更新する
    */
   private void refreshSelectedRows() {
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
     String fileName;
     Entry entry;
-    int columnIdx;
-    for (int tableRowIdx : table.getSelectedRows()) {
-      tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
-      fileName = (String) table.getModel().getValueAt(tableRowIdx,
-          columnModel.getColumnIndex("Current Name"));
+    int viewColumnIndex;
+    ArrayList<Object> rowData;
+    for (int viewRowIndex : table.getSelectedRows()) {
+      viewRowIndex = table.convertRowIndexToModel(viewRowIndex);
+
+      viewColumnIndex = table.convertColumnIndexToModel(columnModel.getColumnIndex("元ファイル名"));
+      fileName = (String) table.getModel().getValueAt(viewRowIndex, viewColumnIndex);
       entry = entryMap.get(fileName);
-      columnIdx = table.convertColumnIndexToModel(columnModel.getColumnIndex("original"));
-      table.getModel().setValueAt(entry.getOriginal(), tableRowIdx, columnIdx);
-      columnIdx = table.convertColumnIndexToModel(columnModel.getColumnIndex("Name to Store"));
-      table.getModel().setValueAt(entry.generateNameToSave(), tableRowIdx, columnIdx);
+
+      // 全カラム版ここから
+      // tableHeaders = {"ID", "種別", "成", "サークル", "著者", "タイトル", "副題", "巻号", "issue", "元ファイル名",
+      // "保存ファイル名", "備考", "頁数", "容量", "パス", "日付", "元ネタ", "発刊"};
+
+      // row = {getId(), getType(), getAdult(), getCircle(), getAuthor(), getTitle(),
+      // getSubtitle(), getVolume(), getIssue(), getEntryTitle(), getNote(), getPages(),
+      // String.format("%.2f", getSize()), getPath().toString(), dateString, getOriginal(),
+      // getRelease()};
+
+      // TODO Entry.getRowData()の戻り値とtableHeadersの並び順を合わせるメソッドを作ればこことupdateTableの両方で使える
+
+      rowData = new ArrayList<Object>(Arrays.asList(entry.getRowData()));
+      rowData.set(9, entry.getPath().getFileName().toString());
+      rowData.add(10, entry.generateNameToSave());
+      for (int index = 0; index < tableHeaders.length; index++) {
+        if (Arrays.asList(columnsToHide).contains(tableHeaders[index])) {
+          continue;
+        }
+        viewColumnIndex = columnModel.getColumnIndex(tableHeaders[index]);
+        viewColumnIndex = table.convertColumnIndexToModel(viewColumnIndex);
+        table.getModel().setValueAt(rowData.get(index), viewRowIndex, viewColumnIndex);
+      }
     }
   }
 
   // AttrDialogを開く。applyされたらentryMapを更新し、更にtableを更新
   private void openAttrDialog() {
     ArrayList<Entry> entryList = new ArrayList<Entry>();
-    for (Object currentFileName : table.getSelectedColumnValues("Current Name")) {
+    for (Object currentFileName : table.getSelectedColumnValues("元ファイル名")) {
       entryList.add(entryMap.get((String) currentFileName));
     }
     entryList.removeAll(Collections.singleton(null));
@@ -353,10 +416,12 @@ public class ImportDialog extends JDialog {
     DefaultTableColumnModel columnModel = (DefaultTableColumnModel) table.getColumnModel();
     String fileName;
     ArrayList<Entry> entryList = new ArrayList<Entry>();
+    int tableColumnIdx;
     for (int tableRowIdx : table.getSelectedRows()) {
       tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
-      fileName = (String) table.getModel().getValueAt(tableRowIdx,
-          columnModel.getColumnIndex("Current Name"));
+      tableColumnIdx = columnModel.getColumnIndex("元ファイル名");
+      tableColumnIdx = table.convertColumnIndexToModel(tableColumnIdx);
+      fileName = (String) table.getModel().getValueAt(tableRowIdx, tableColumnIdx);
       entryList.add(entryMap.get(fileName));
     }
     return entryList;
@@ -493,7 +558,7 @@ public class ImportDialog extends JDialog {
           for (int tableRowIdx : table.getSelectedRows()) {
             tableRowIdx = table.convertRowIndexToModel(tableRowIdx);
             fileName = (String) table.getModel().getValueAt(tableRowIdx,
-                columnModel.getColumnIndex("Current Name"));
+                table.convertColumnIndexToModel(columnModel.getColumnIndex("元ファイル名")));
             entry = entryMap.get(fileName);
             if (Objects.nonNull(entry.getNote())) {
               ArrayList<String> noteList =
