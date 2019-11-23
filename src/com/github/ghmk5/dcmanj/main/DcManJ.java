@@ -29,7 +29,7 @@ public class DcManJ {
   static {
     // テーブルの表示に使うフォントを生成
     try {
-      Font.createFont(Font.TRUETYPE_FONT,
+      TABLEFONT = Font.createFont(Font.TRUETYPE_FONT,
           DcManJ.class.getResourceAsStream("/data/VL-PGothic-Regular.ttf"));
       // Font.createFont(Font.TRUETYPE_FONT,
       // DcManJ.class.getResourceAsStream("/data/BIZ-UDGOTHICB.TTC"));
