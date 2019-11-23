@@ -749,34 +749,52 @@ public class Entry {
     ArrayList<String> list = new ArrayList<String>();
     StringBuilder sb = new StringBuilder();
     sb.append("[");
-    switch (type) {
-      case "magazine":
-        sb.append("雑誌]");
-        break;
-      case "doujinshi":
-        if (Objects.nonNull(circle)) {
-          sb.append(circle);
-          if (Objects.nonNull(author)) {
-            sb.append("(");
-            sb.append(author);
-            sb.append(")]");
-          } else {
-            sb.append("] ");
-          }
-        } else if (Objects.nonNull(author)) {
-          sb.append(author);
-          sb.append("]");
-        } else {
-          sb.append("サークル著者不詳] ");
-        }
-        break;
-      default:
+    if (Objects.isNull(type)) {
+      if (Objects.nonNull(circle)) {
+        sb.append(circle);
         if (Objects.nonNull(author)) {
+          sb.append("(");
           sb.append(author);
-          sb.append("]");
+          sb.append(")]");
         } else {
-          sb.append("著者不詳] ");
+          sb.append("] ");
         }
+      } else if (Objects.nonNull(author)) {
+        sb.append(author);
+        sb.append("]");
+      } else {
+        sb.append("サークル著者不詳] ");
+      }
+    } else {
+      switch (type) {
+        case "magazine":
+          sb.append("雑誌]");
+          break;
+        case "doujinshi":
+          if (Objects.nonNull(circle)) {
+            sb.append(circle);
+            if (Objects.nonNull(author)) {
+              sb.append("(");
+              sb.append(author);
+              sb.append(")]");
+            } else {
+              sb.append("] ");
+            }
+          } else if (Objects.nonNull(author)) {
+            sb.append(author);
+            sb.append("]");
+          } else {
+            sb.append("サークル著者不詳] ");
+          }
+          break;
+        default:
+          if (Objects.nonNull(author)) {
+            sb.append(author);
+            sb.append("]");
+          } else {
+            sb.append("著者不詳] ");
+          }
+      }
     }
     list.add(sb.toString());
     list.add(title);
