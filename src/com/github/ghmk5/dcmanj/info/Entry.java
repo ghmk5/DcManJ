@@ -561,7 +561,12 @@ public class Entry {
       }
     } else if (file.isDirectory()) {
       newSize = FileUtils.sizeOfDirectory(file) / 1024d / 1024d;
-      newPages = file.listFiles().length;
+      try { // パーミッション/アクセス権の問題で内包するファイル数が取得できない場合ここで例外が出る
+        newPages = file.listFiles().length;
+      } catch (Exception e) {
+        System.out.println(file.getAbsolutePath());
+        newPages = 0;
+      }
     } else {
       JOptionPane.showMessageDialog(null, "Entry.pathの内容にファイルでもディレクトリでもないエントリのパスが入っている", "エラー",
           JOptionPane.ERROR_MESSAGE);
