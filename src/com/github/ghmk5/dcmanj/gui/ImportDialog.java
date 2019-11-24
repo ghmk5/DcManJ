@@ -137,7 +137,7 @@ public class ImportDialog extends JDialog {
 
     table = new ExtendedTable() {
 
-      // entry.isReady()がfalseの行は赤文字にする
+      // エントリの状態によって表示色を変更する
       @Override
       public Component prepareRenderer(TableCellRenderer tcr, int row, int column) {
         Component c = super.prepareRenderer(tcr, row, column);
@@ -148,7 +148,13 @@ public class ImportDialog extends JDialog {
         if (Objects.nonNull(entry)) {
           ready = entry.isReady();
           if (!ready) {
+            // entry.isReady()がfalseの行は赤文字にする
             c.setForeground(Color.RED);
+          } else if (column == getColumnModel().getColumnIndex("種別")) {
+            if (Objects.nonNull(entry.getAdult()) && entry.getAdult()) {
+              // 成人向けフラグtrueの行は種別カラムを臙脂色にする
+              c.setForeground(new Color(127, 16, 63));
+            }
           } else {
             c.setForeground(getForeground());
           }
