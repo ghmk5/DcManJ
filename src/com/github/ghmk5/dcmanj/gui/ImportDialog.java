@@ -307,7 +307,7 @@ public class ImportDialog extends JDialog {
     // データモデルを生成し、テーブルに適用
     DefaultTableModel model;
 
-    Object[][] data = rowList.toArray(new Object[tableHeaders.length][rowList.size()]);
+    Object[][] data = rowList.toArray(new Object[rowList.size()][tableHeaders.length]);
     model = new DefaultTableModel(data, tableHeaders) {
 
       // 各列が持つデータのクラスを指定
