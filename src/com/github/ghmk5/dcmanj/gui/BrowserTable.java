@@ -82,7 +82,7 @@ public class BrowserTable extends ExtendedTable {
             c.setForeground(new Color(16, 63, 16));
           }
         } else if (column == getColumnModel().getColumnIndex("種別")) {
-          if (entry.getAdult()) {
+          if (Objects.nonNull(entry.getAdult()) && entry.getAdult()) {
             c.setForeground(new Color(127, 16, 63));
           } else {
             c.setForeground(getForeground());
