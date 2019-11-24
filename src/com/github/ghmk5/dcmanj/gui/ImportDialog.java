@@ -33,7 +33,9 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.ProgressMonitor;
+import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
+import javax.swing.SortOrder;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -51,14 +53,14 @@ public class ImportDialog extends JDialog {
   BrowserWindow browserWindow;
   AppInfo appInfo;
   ExtendedTable table;
-  String[] tableHeaders = {"ID", "種別", "成", "サークル", "著者", "タイトル", "副題", "巻号", "issue", "元ファイル名",
-      "保存ファイル名", "備考", "頁数", "容量", "パス", "日付", "元ネタ", "発刊"};
+  String[] tableHeaders = {"元ファイル名", "ID", "種別", "成", "サークル", "著者", "タイトル", "副題", "巻号", "issue",
+      "備考", "元ネタ", "頁数", "容量", "パス", "日付", "発刊", "保存ファイル名"};
   // TableModelには入っているが表示しない列 -- 直接インデックスで指定すると、表示しない列の二つ目以降で番号がずれて分かりにくくなる
-  String[] columnsToHide = {"ID", "成", "パス", "日付", "発刊"};
+  String[] columnsToHide = {"ID", "成", "頁数", "容量", "パス", "日付", "発刊"};
   private Class[] classesInRow =
-      {Integer.class, String.class, Boolean.class, String.class, String.class, String.class,
+      {String.class, Integer.class, String.class, Boolean.class, String.class, String.class,
           String.class, String.class, String.class, String.class, String.class, String.class,
-          Integer.class, Double.class, String.class, String.class, String.class, String.class};
+          Integer.class, String.class, String.class, String.class, String.class, String.class};
   String dirPath;
   File imptDir;
   HashMap<String, Entry> entryMap;
@@ -140,7 +142,6 @@ public class ImportDialog extends JDialog {
       public Component prepareRenderer(TableCellRenderer tcr, int row, int column) {
         Component c = super.prepareRenderer(tcr, row, column);
         int viewColumnIdx = getColumnModel().getColumnIndex("元ファイル名");
-        // viewColumnIdx = convertColumnIndexToModel(viewColumnIdx);
         String filename = (String) getValueAt(row, viewColumnIdx);
         Entry entry = entryMap.get(filename);
         Boolean ready = null;
@@ -195,10 +196,52 @@ public class ImportDialog extends JDialog {
     readEntries();
     updateTable();
 
+    // デフォルトソート
+    List<RowSorter.SortKey> sortKeyList = new ArrayList<RowSorter.SortKey>();
+    String[] headerTagsForSort = {"著者", "タイトル", "巻号", "サークル"};
+    int columnIndex = table.getColumnModel().getColumnIndex("著者");
+    for (String headerTagForSort : headerTagsForSort) {
+      columnIndex = table.getColumnModel().getColumnIndex(headerTagForSort);
+      columnIndex = table.convertColumnIndexToModel(columnIndex);
+      sortKeyList.add(new RowSorter.SortKey(columnIndex, SortOrder.ASCENDING));
+    }
+    // RowSorter.setSortKeys()の引数はList<RowSorter.SortKey>なので、
+    // 直接SortKeyList<SortKey>が渡せても良い筈なのだが(参照:
+    // http://java-labyrinth.seesaa.net/article/125419706.html)、
+    // 定義されたメソッド引数がList<? extends SortKey>になってるせいで渡せなくなっている(調べてみると、Java7の時点で既にこの形になっている)
+    // なにか書き方があるのかもしれないが、ジェネリクスの性質としてnull以外渡せない形な気もする
+    // (参照: http://blogs.wankuma.com/nagise/archive/2008/08/20/153557.aspx)
+    // 配列からArrays.asListで変換して渡すと渡せるようなので(参照: https://ateraimemo.com/Swing/DefaultSortingColumn.html)
+    // リストに追加してから配列に変換した上でもう一度リストに変換して渡すという無理やりな形をとっている
+    // もしかしてこれってAPIのバグに類するものなのではなかろうか
+    table.getRowSorter()
+        .setSortKeys(Arrays.asList(sortKeyList.toArray(new RowSorter.SortKey[sortKeyList.size()])));
+
+  }
+
+  /**
+   * Entry.getRowData()の戻り値をImportDialogのテーブルに適合するよう並べ替え、不足の項目を補う
+   *
+   * @param entry
+   * @return
+   */
+  private Object[] treatRowData(Entry entry) {
+    Object[] rowData = entry.getRowData();
+    ArrayList<Object> dataList = new ArrayList<Object>(Arrays.asList(rowData));
+    dataList.add(0, entry.getPath().getFileName().toString());
+    dataList.set(10, rowData[10]);
+    dataList.set(11, rowData[15]);
+    dataList.set(12, rowData[11]);
+    dataList.set(13, rowData[12]);
+    dataList.set(14, rowData[13]);
+    dataList.set(15, rowData[14]);
+    dataList.set(16, rowData[16]);
+    dataList.add(17, entry.generateNameToSave());
+    return dataList.toArray(new Object[dataList.size()]);
   }
 
   private File chooseImptDir() {
-    JFileChooser fileChooser = new JFileChooser();
+    JFileChooser fileChooser = new JFileChooser(appInfo.getImptDir());
     fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     fileChooser.setApproveButtonText("選択");
     int selected = fileChooser.showOpenDialog(this);
@@ -254,24 +297,11 @@ public class ImportDialog extends JDialog {
     ((DefaultTableModel) table.getModel()).setRowCount(0);
 
     // entryListの内容からデータを生成
-    Entry entry;
-    File srcFile;
-
-    ArrayList<String[]> dataList = new ArrayList<String[]>();
-    String[] rowData;
-
     ArrayList<Object[]> rowList = new ArrayList<Object[]>();
     Object[] row;
     for (String fileName : entryMap.keySet()) {
-      entry = entryMap.get(fileName);
-
-      ArrayList<Object> list = new ArrayList<Object>(Arrays.asList(entry.getRowData()));
-      list.set(9, entry.getPath().getFileName().toString());
-      list.add(10, entry.generateNameToSave());
-
-      row = list.toArray(new Object[list.size()]);
+      row = treatRowData(entryMap.get(fileName));
       rowList.add(row);
-
     }
 
     // データモデルを生成し、テーブルに適用
@@ -304,19 +334,19 @@ public class ImportDialog extends JDialog {
           table.getColumnModel().getColumn(table.getColumnModel().getColumnIndex(columnName)));
     }
 
-    // "容量"列に右詰めのレンダラを設定
-    DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
-    rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
-    table.getColumnModel().getColumn(table.getColumnModel().getColumnIndex("容量"))
-        .setCellRenderer(rightRenderer);
-
+    // "容量"列が表示されている場合は右詰めのレンダラを設定
     try {
-      HashMap<String, Integer> columnWidthMap = appInfo.getColumnWidthImpt();
-      if (Objects.nonNull(columnWidthMap)) {
-        table.setColumnWidth(columnWidthMap);
-      }
-    } catch (Exception e) {
+      int colIdx = table.getColumnModel().getColumnIndex("容量");
+      DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+      rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+      table.getColumnModel().getColumn(colIdx).setCellRenderer(rightRenderer);
+    } catch (IllegalArgumentException e) {
+      // do nothing
+    }
 
+    HashMap<String, Integer> columnWidthMap = appInfo.getColumnWidthImpt();
+    if (Objects.nonNull(columnWidthMap)) {
+      table.setColumnWidth(columnWidthMap);
     }
 
     table.setRowSorter(new TableRowSorter<>((DefaultTableModel) table.getModel()));
@@ -342,7 +372,6 @@ public class ImportDialog extends JDialog {
     String fileName;
     Entry entry;
     int viewColumnIndex;
-    ArrayList<Object> rowData;
     for (int viewRowIndex : table.getSelectedRows()) {
       viewRowIndex = table.convertRowIndexToModel(viewRowIndex);
 
@@ -350,27 +379,14 @@ public class ImportDialog extends JDialog {
       fileName = (String) table.getModel().getValueAt(viewRowIndex, viewColumnIndex);
       entry = entryMap.get(fileName);
 
-      // 全カラム版ここから
-      // tableHeaders = {"ID", "種別", "成", "サークル", "著者", "タイトル", "副題", "巻号", "issue", "元ファイル名",
-      // "保存ファイル名", "備考", "頁数", "容量", "パス", "日付", "元ネタ", "発刊"};
-
-      // row = {getId(), getType(), getAdult(), getCircle(), getAuthor(), getTitle(),
-      // getSubtitle(), getVolume(), getIssue(), getEntryTitle(), getNote(), getPages(),
-      // String.format("%.2f", getSize()), getPath().toString(), dateString, getOriginal(),
-      // getRelease()};
-
-      // TODO Entry.getRowData()の戻り値とtableHeadersの並び順を合わせるメソッドを作ればこことupdateTableの両方で使える
-
-      rowData = new ArrayList<Object>(Arrays.asList(entry.getRowData()));
-      rowData.set(9, entry.getPath().getFileName().toString());
-      rowData.add(10, entry.generateNameToSave());
+      Object[] row = treatRowData(entry);
       for (int index = 0; index < tableHeaders.length; index++) {
         if (Arrays.asList(columnsToHide).contains(tableHeaders[index])) {
           continue;
         }
         viewColumnIndex = columnModel.getColumnIndex(tableHeaders[index]);
         viewColumnIndex = table.convertColumnIndexToModel(viewColumnIndex);
-        table.getModel().setValueAt(rowData.get(index), viewRowIndex, viewColumnIndex);
+        table.getModel().setValueAt(row[index], viewRowIndex, viewColumnIndex);
       }
     }
   }
@@ -486,7 +502,7 @@ public class ImportDialog extends JDialog {
 
       File newImptDir = chooseImptDir();
       if (Objects.nonNull(newImptDir) && newImptDir.exists() && newImptDir.isDirectory()
-          || newImptDir.canRead()) {
+          && newImptDir.canRead()) {
         imptDir = newImptDir;
         dirPath = imptDir.getAbsolutePath().toString();
         appInfo.setImptDir(dirPath);
