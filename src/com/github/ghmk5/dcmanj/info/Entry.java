@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,12 +74,12 @@ public class Entry {
       {"巻号", "volume", "String"},
       {"issue", "issue", "String"},
       {"備考", "note", "String"},
+      {"元ネタ", "original", "String"},
+      {"配布イベ", "release", "String"},
       {"頁数", "pages", "Integer"},
       {"容量", "size", "Double"},
       {"パス", "path", "Path"},
-      {"日付", "date", "OffsetDateTime"},
-      {"元ネタ", "original", "String"},
-      {"配布イベ", "release", "String"}
+      {"日付", "date", "OffsetDateTime"}
     };
     //@formatter:on
 
@@ -86,17 +87,19 @@ public class Entry {
     tagNameMap = new HashMap<String, String>();
     dataClassMap = new HashMap<String, String>();
 
+    List<String> tagNameList = new ArrayList<String>();
+    List<String> columnNameList = new ArrayList<String>();
     for (String[] row : strings) {
       columnNameMap.put(row[0], row[1]);
       tagNameMap.put(row[1], row[0]);
       dataClassMap.put(row[0], row[2]);
       dataClassMap.put(row[1], row[2]);
+      tagNameList.add(row[0]);
+      columnNameList.add(row[1]);
     }
 
-    COLUMN_NAMES =
-        new ArrayList<String>(tagNameMap.keySet()).toArray(new String[tagNameMap.keySet().size()]);
-    TAG_NAMES = new ArrayList<String>(columnNameMap.keySet())
-        .toArray(new String[columnNameMap.keySet().size()]);
+    COLUMN_NAMES = columnNameList.toArray(new String[columnNameList.size()]);
+    TAG_NAMES = tagNameList.toArray(new String[tagNameList.size()]);
 
   }
 
