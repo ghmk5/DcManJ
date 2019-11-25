@@ -223,7 +223,7 @@ public class Entry {
       }
     }
     if (Objects.isNull(volume)) {
-      pattern = Pattern.compile("^([^\\d]+) ?(\\d+)$");
+      pattern = Pattern.compile("^(.+[^\\d])(\\d+)$");
       matcher = pattern.matcher(title);
       if (matcher.find()) {
         volume = matcher.group(2);
