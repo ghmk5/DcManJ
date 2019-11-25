@@ -511,6 +511,7 @@ public class ImportDialog extends JDialog {
           && newImptDir.canRead()) {
         imptDir = newImptDir;
         dirPath = imptDir.getAbsolutePath().toString();
+        setTitle(dirPath + " から新規エントリを読み込み");
         appInfo.setImptDir(dirPath);
         Util.writeAppInfo(appInfo);
 
