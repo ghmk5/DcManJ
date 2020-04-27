@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -376,7 +379,19 @@ public class BrowserWindow extends JFrame {
       @Override
       public void actionPerformed(ActionEvent e) {
         queryField.setText("");
-        queryField.paste();
+
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        Object queryString;
+        try {
+          queryString = clipboard.getData(DataFlavor.stringFlavor);
+          if (queryString instanceof String) {
+            queryField.setText(((String) queryString).trim());
+          }
+        } catch (Exception e1) {
+          // TODO 自動生成された catch ブロック
+          e1.printStackTrace();
+        }
+
         executeLikeQuery(queryField.getText());
       }
     };
