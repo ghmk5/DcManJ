@@ -385,7 +385,7 @@ public class BrowserTable extends ExtendedTable {
           queryWord = "";
       }
       String sql =
-          "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
+          "select rowid, * from magdb where " + fieldName + " like " + Util.quoteForLike(queryWord);
       refresh(sql);
     }
 
@@ -419,7 +419,7 @@ public class BrowserTable extends ExtendedTable {
           queryWord = "";
       }
       String sql =
-          "select rowid, * from magdb where " + fieldName + " like \'%" + queryWord + "%\';";
+          "select rowid, * from magdb where " + fieldName + " like " + Util.quoteForLike(queryWord);
       BrowserWindow newWindow = new BrowserWindow(main);
       main.listBrowserWindows.add(newWindow);
       newWindow.refreshTable(sql);
