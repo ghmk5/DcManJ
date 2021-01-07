@@ -66,6 +66,8 @@ public class Util {
       PLATFORM = "win";
     } else if (osName.startsWith("mac")) {
       PLATFORM = "mac";
+    } else {
+      PLATFORM = "unknown";
     }
   }
 
