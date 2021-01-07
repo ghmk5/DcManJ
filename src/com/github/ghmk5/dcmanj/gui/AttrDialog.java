@@ -8,6 +8,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -238,6 +240,7 @@ public class AttrDialog extends JDialog {
     // 以下のフィールドは変更不可(applyしたときもEntryに反映させない)
     pagesField.setEnabled(false);
     sizeField.setEnabled(false);
+    dateField.setEnabled(false);
     pathField.setEnabled(false);
 
     pack();
@@ -259,6 +262,7 @@ public class AttrDialog extends JDialog {
     ArrayList<String> noteList = new ArrayList<String>();
     ArrayList<String> originalList = new ArrayList<String>();
     ArrayList<String> releaseList = new ArrayList<String>();
+    ArrayList<OffsetDateTime> dateList = new ArrayList<OffsetDateTime>();
     ArrayList<String> pathList = new ArrayList<String>();
     ArrayList<String> generatedFileNameList = new ArrayList<String>();
 
@@ -282,6 +286,7 @@ public class AttrDialog extends JDialog {
       noteList.add(entry.getNote());
       originalList.add(entry.getOriginal());
       releaseList.add(entry.getRelease());
+      dateList.add(entry.getDate());
       pathList.add(entry.getPath().getParent().toString());
       generatedFileNameList.add(entry.generateNameToSave());
     }
@@ -300,6 +305,7 @@ public class AttrDialog extends JDialog {
     noteList = new ArrayList<String>(new LinkedHashSet<>(noteList));
     originalList = new ArrayList<String>(new LinkedHashSet<>(originalList));
     releaseList = new ArrayList<String>(new LinkedHashSet<>(releaseList));
+    dateList = new ArrayList<OffsetDateTime>(new LinkedHashSet<>(dateList));
     pathList = new ArrayList<String>(new LinkedHashSet<>(pathList));
     generatedFileNameList = new ArrayList<String>(new LinkedHashSet<>(generatedFileNameList));
 
@@ -340,6 +346,15 @@ public class AttrDialog extends JDialog {
     setTFValue(noteList, noteField);
     setTFValue(originalList, originalField);
     setTFValue(releaseList, releaseField);
+    // TODO 日付をフィールドにセットする
+    // setTFValue(dateList, dateField);
+    if (dateList.size() == 1) {
+      if (Objects.nonNull(dateList.get(0))) {
+        dateField.setText(dateList.get(0).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+      }
+    } else {
+      dateField.setText("--ununified values--");
+    }
     setTFValue(pathList, pathField);
     if (generatedFileNameList.size() == 1) {
       generatedFileNameLabel.setText(generatedFileNameList.get(0));
