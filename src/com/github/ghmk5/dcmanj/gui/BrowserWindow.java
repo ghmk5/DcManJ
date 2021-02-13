@@ -74,7 +74,7 @@ public class BrowserWindow extends JFrame {
     }
 
     this.setTitle("DcManJ");
-    this.setTitle("DcManJ(Dev)");
+    // this.setTitle("DcManJ(Dev)");
 
     this.getContentPane().setLayout(new BorderLayout());
 

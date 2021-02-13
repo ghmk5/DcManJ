@@ -765,7 +765,7 @@ public class Entry {
           sb.append(author);
           sb.append(")]");
         } else {
-          sb.append("] ");
+          sb.append("]");
         }
       } else if (Objects.nonNull(author)) {
         sb.append(author);
@@ -786,7 +786,7 @@ public class Entry {
               sb.append(author);
               sb.append(")]");
             } else {
-              sb.append("] ");
+              sb.append("]");
             }
           } else if (Objects.nonNull(author)) {
             sb.append(author);
