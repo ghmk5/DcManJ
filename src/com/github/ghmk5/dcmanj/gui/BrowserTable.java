@@ -53,7 +53,7 @@ public class BrowserTable extends ExtendedTable {
       {Integer.class, String.class, Boolean.class, String.class, String.class, String.class,
           String.class, String.class, String.class, String.class, String.class, Integer.class,
           Double.class, String.class, String.class, String.class, String.class};
-  HashMap<Integer, Entry> entryMap;
+  HashMap<Integer, Entry> entryMap; // データベースのROWIDをキー、Entryを値にとるマップ。表示中のレコードを保持する
 
   {
     dbColumnNameMap = new HashMap<String, String>();
@@ -180,6 +180,7 @@ public class BrowserTable extends ExtendedTable {
     Action openAttrDialogAction;
     Action removeEntriesAction;
     Action moveEntriesAction;
+    Action renameFileAction;
 
     public TableContextMenu(BrowserTable browserTable) {
       super();
@@ -266,15 +267,17 @@ public class BrowserTable extends ExtendedTable {
                 try {
                   file = entry.getPath().toFile();
                   if (file.isFile()) {
-                    System.out.println(file.delete());
-                    // file.delete();
+                    file.delete();
+                    System.out.println("file \"" + file.getName() + "\" deleted.");
                   } else if (file.isDirectory()) {
                     FileUtils.deleteDirectory(file);
+                    System.out.println("directory \"" + file.getName() + "\" deleted.");
                   } else {
                     // 消すべきファイルが見つからなかった場合はここに来る
                     // ファイルが無いことを承知の上でレコードだけ消したい場合を考慮し、エラーメッセージは後でまとめて出す
                     // (ここで出すとループ1回毎にメッセージが出ることになるため)
                     filesNotFound.add(file.getPath().toString());
+                    System.out.println("entry \"" + file.getName() + "\" could not deleted.");
                   }
                 } catch (IOException e1) {
                   // 消すべきファイルは見つかったけど何らかの理由で消せなかった場合はここに来る
