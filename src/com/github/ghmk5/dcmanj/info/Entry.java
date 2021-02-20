@@ -138,6 +138,9 @@ public class Entry {
     // カッコ入り要素間のスペースを除く
     name = name.replaceAll("\\) +\\(", ")(");
 
+    // 全角チルダを波ダッシュに置換 VLゴシックではグリフが同じなのでわかりにくいが、前者が全角チルダで後者が波ダッシュ
+    name = name.replaceAll("〜", "～");
+
     // 最初のスクエアブラケットとその前後に分解 分解出来なければファイル名をタイトル+後置付随詞とみなす
     Pattern pattern = Pattern.compile("^([^\\[]+)?\\[([^\\]]+)\\](.+)$");
     Matcher matcher = pattern.matcher(name);
