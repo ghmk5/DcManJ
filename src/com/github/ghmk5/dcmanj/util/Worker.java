@@ -118,7 +118,7 @@ public class Worker extends SwingWorker<ArrayList<Object>, Object[]> {
                   }
                 }
               });
-              srcFile = unzipper.unzipToTmp(false);
+              srcFile = unzipper.unzipToTmp(true);
             } catch (IOException e) {
               // 一時ファイルにunzipできなかった場合
               entriesCouldntZip.add(entry);

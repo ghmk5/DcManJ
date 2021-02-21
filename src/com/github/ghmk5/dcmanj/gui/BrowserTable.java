@@ -180,7 +180,6 @@ public class BrowserTable extends ExtendedTable {
     Action openAttrDialogAction;
     Action removeEntriesAction;
     Action moveEntriesAction;
-    Action renameFileAction;
 
     public TableContextMenu(BrowserTable browserTable) {
       super();

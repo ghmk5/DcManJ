@@ -650,7 +650,11 @@ public class Util {
     } else if (appInfo.getSelectDestDirOnMove()) {
       parentDir = new File(appInfo.getMoveDestDir());
       saveDirPrefix = appInfo.getChildlDirPrefixOnMove();
-      saveDir = getDirToSave(parentDir, saveDirPrefix);
+      if (appInfo.getUseChildDirOnMove()) {
+        saveDir = getDirToSave(parentDir, saveDirPrefix);
+      } else {
+        saveDir = parentDir;
+      }
     } else {
       saveDir = srcFile.getParentFile();
     }
