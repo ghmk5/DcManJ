@@ -191,8 +191,7 @@ public class MagUnzip {
 
   public static void main(String[] args) {
     String[] charsetNames = {"MS932", "UTF-8"};
-    File fileToUnzip = new File(
-        "D:\\drop\\インポート元\\(同人誌) [Cock-a-Doodle-Doo (もりかわ)] 1LJK～ワケありJK付き物件 (DL版)(修正版)(オリジナル).zip");
+    File fileToUnzip = new File("D:\\drop\\hoge.zip");
     try {
       MagUnzip unzipper = new MagUnzip(fileToUnzip, charsetNames);
       // File result = unzipper.unzip(new File("D://drop/"), false);

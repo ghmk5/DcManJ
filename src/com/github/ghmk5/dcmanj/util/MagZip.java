@@ -135,14 +135,16 @@ public class MagZip {
     }
     ArrayList<File> listOfFiles = new ArrayList<File>();
     listOfFiles.add(file);
+    // Windows10のエクスプローラーは適切にフラグが立ててあればzipファイル内のエントリがUTF-8でも文字化けせずに読めるようなので、UTF-8で保存するように変更した
     ZipOutputStream zos =
-        new ZipOutputStream(new FileOutputStream(tmpFile), Charset.forName("Shift_JIS"));
+        new ZipOutputStream(new FileOutputStream(tmpFile), Charset.forName("UTF-8"));
     mkZip(zos, listOfFiles, false);
     zos.close();
     return tmpFile;
   }
 
   public static void main(String[] args) throws Exception {
+
     File fileToZip = new File("/Users/mk5/Desktop/nestedDir");
     File file2ToZip = new File("/Users/mk5/Desktop/propsを保存している箇所.txt");
     ArrayList<File> arrayOfFiles = new ArrayList<>();
@@ -150,8 +152,9 @@ public class MagZip {
     arrayOfFiles.add(file2ToZip);
 
     File zipFile = new File("/Volumes/drop/sample.zip"); // 作成するzipファイルの名前
+    // Windows10のエクスプローラーは適切にフラグが立ててあればzipファイル内のエントリがUTF-8でも文字化けせずに読めるようなので、UTF-8で保存するように変更した
     ZipOutputStream zos =
-        new ZipOutputStream(new FileOutputStream(zipFile), Charset.forName("Shift_JIS"));
+        new ZipOutputStream(new FileOutputStream(zipFile), Charset.forName("UTF-8"));
 
     MagZip zipper = new MagZip();
 
