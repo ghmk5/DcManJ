@@ -153,7 +153,7 @@ public class BrowserTable extends ExtendedTable {
     addMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent me) {
         if (me.getClickCount() == 2 && getSelectedRows().length == 1) {
-          Util.openWithViewer(main.appInfo, getEntries().get(0));
+          Util.openWithViewer(main.appInfo, getEntries().get(0), false);
         }
       }
     });
@@ -163,6 +163,7 @@ public class BrowserTable extends ExtendedTable {
 
   class TableContextMenu extends JPopupMenu {
 
+    Action openWithAoViewer;
     JMenu searchMenu;
     Action searchSameAuthor;
     Action searchSameAuthorNW;
@@ -183,6 +184,16 @@ public class BrowserTable extends ExtendedTable {
 
     public TableContextMenu(BrowserTable browserTable) {
       super();
+
+      openWithAoViewer = new AbstractAction("青空文庫ビューワで開く") {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          System.out.println(main.appInfo.getAoViewerPath());
+          Util.openWithViewer(main.appInfo, getEntries().get(0), true);
+        }
+      };
+      add(openWithAoViewer);
 
       searchMenu = new JMenu("検索");
       add(searchMenu);

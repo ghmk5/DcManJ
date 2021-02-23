@@ -644,7 +644,7 @@ public class ImportDialog extends JDialog {
         @Override
         public void actionPerformed(ActionEvent e) {
           Entry entry = getSelectedEntries().get(0);
-          Util.openWithViewer(appInfo, entry);
+          Util.openWithViewer(appInfo, entry, false);
         }
       });
       add(openWithViewer);

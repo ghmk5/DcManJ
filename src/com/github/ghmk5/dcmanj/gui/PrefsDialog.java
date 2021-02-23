@@ -60,6 +60,10 @@ public class PrefsDialog extends JDialog {
   JTextField viewerPathField;
   JButton selectViewerExecutableButton;
 
+  // 青空文庫テキストビューワパス
+  JTextField aoViewerPathField;
+  JButton selectAoViewerExecutableButton;
+
   // パーサ関連
   JList<String> evRegExList;
   DefaultListModel<String> evRegExModel;
@@ -158,6 +162,17 @@ public class PrefsDialog extends JDialog {
     box.add(viewerPathField);
     selectViewerExecutableButton = new JButton("Select...");
     box.add(selectViewerExecutableButton);
+    panel.add(Box.createVerticalStrut(8));
+
+    // 青空文庫テキストビューワ
+    box = Box.createHorizontalBox();
+    box.setBorder(new TitledBorder("青空文庫テキストビューワ実行ファイルのパス"));
+    panel.add(box);
+    aoViewerPathField = new JTextField();
+    aoViewerPathField.setEditable(false);
+    box.add(aoViewerPathField);
+    selectAoViewerExecutableButton = new JButton("Select...");
+    box.add(selectAoViewerExecutableButton);
     panel.add(Box.createVerticalStrut(8));
 
     // パーサ関連
@@ -270,6 +285,21 @@ public class PrefsDialog extends JDialog {
         }
       }
     });
+
+    selectAoViewerExecutableButton.addActionListener(new ActionListener() {
+
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setApproveButtonText("選択");
+        int selected = fileChooser.showOpenDialog((Component) e.getSource());
+        if (selected == JFileChooser.APPROVE_OPTION) {
+          aoViewerPathField.setText(fileChooser.getSelectedFile().toString());
+        }
+      }
+    });
+
     evRegExList.addMouseListener(new ListItemEditorCaller(evRegExList));
     addEvRegExButton.addActionListener(new ListItemAdder(evRegExList));
     loadDefaultEvRegExButton
@@ -316,6 +346,9 @@ public class PrefsDialog extends JDialog {
     // ビューワパス
     viewerPathField.setText(appInfo.getViewerPath());
 
+    // 青空文庫テキストビューワパス
+    aoViewerPathField.setText(appInfo.getAoViewerPath());
+
     // 正規表現タグ
     evRegExModel = new DefaultListModel<String>();
     for (String element : appInfo.getEvRegExStrings()) {
@@ -344,6 +377,9 @@ public class PrefsDialog extends JDialog {
 
     // ビューワパス
     appInfo.setViewerPath(emptyToNull(viewerPathField));
+
+    // 青空文庫テキストビューワパス
+    appInfo.setAoViewerPath(emptyToNull(aoViewerPathField));
 
     // 正規表現タグ
     Object[] objects = ((DefaultListModel<String>) evRegExList.getModel()).toArray();

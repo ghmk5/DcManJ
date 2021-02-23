@@ -542,8 +542,16 @@ public class Util {
    * @param appInfo
    * @param entry
    */
-  public static void openWithViewer(AppInfo appInfo, com.github.ghmk5.dcmanj.info.Entry entry) {
-    String viewerPath = appInfo.getViewerPath();
+  public static void openWithViewer(AppInfo appInfo, com.github.ghmk5.dcmanj.info.Entry entry,
+      boolean isAoText) {
+
+    String viewerPath;
+    if (isAoText) {
+      viewerPath = appInfo.getAoViewerPath();
+    } else {
+      viewerPath = appInfo.getViewerPath();
+    }
+
     String entryPath = entry.getPath().toString();
     if (!(new File(entryPath).exists())) {
       JOptionPane.showMessageDialog(null, entryPath + " にアクセスできません");

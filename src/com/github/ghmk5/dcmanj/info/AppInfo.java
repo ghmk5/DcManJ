@@ -49,8 +49,11 @@ public class AppInfo {
   Boolean splitChildDirByNumberOnMove;
   Integer childDirSplitNumberOnMove;
 
-  // ビューワ
+  // 画像ビューワ
   String viewerPath;
+
+  // 青空文庫テキストビューワ
+  String aoViewerPath;
 
   // パーサ
   String[] evRegExStrings;
@@ -448,6 +451,16 @@ public class AppInfo {
     this.viewerPath = viewerPath;
   }
 
+
+  // 青空文庫テキストビューワ
+
+  public String getAoViewerPath() {
+    return aoViewerPath;
+  }
+
+  public void setAoViewerPath(String viewerPath) {
+    this.aoViewerPath = viewerPath;
+  }
 
   // パーサ
 
