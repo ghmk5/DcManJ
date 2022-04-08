@@ -374,7 +374,7 @@ public class BrowserWindow extends JFrame {
   class TextFieldContextMenu extends JPopupMenu {
     private final Action cutAction = new DefaultEditorKit.CutAction();
     private final Action copyAction = new DefaultEditorKit.CopyAction();
-    private final Action pasteAction = new DefaultEditorKit.PasteAction();
+    // private final Action pasteAction = new DefaultEditorKit.PasteAction();
     private final Action paste = new AbstractAction("paste & search") {
 
       @Override
@@ -402,7 +402,7 @@ public class BrowserWindow extends JFrame {
       super();
       add(cutAction);
       add(copyAction);
-      add(pasteAction);
+      // add(pasteAction);
       add(paste);
       addSeparator();
       deleteItem = add("delete");
