@@ -12,6 +12,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -220,7 +222,7 @@ public class BrowserTable extends ExtendedTable {
       copyMenu.add(copyCircle);
       copyTitle = new CopyValue(browserTable, "title", "タイトル");
       copyMenu.add(copyTitle);
-      copyPath = new CopyValue(browserTable, "path", "ファイルのパス");
+      copyPath = new CopyValue(browserTable, "path", "ファイル名(拡張子を除く)");
       copyMenu.add(copyPath);
 
       manageMenu = new JMenu("エントリの管理");
@@ -470,6 +472,9 @@ public class BrowserTable extends ExtendedTable {
           break;
         case "path":
           stringToCopy = browserTable.getEntries().get(0).getPath().toString();
+          Path path = Paths.get(stringToCopy);
+          stringToCopy = path.getFileName().toString();
+          stringToCopy = stringToCopy.replaceFirst("\\.[^\\.]+$", "");
           break;
         default:
           stringToCopy = null;
