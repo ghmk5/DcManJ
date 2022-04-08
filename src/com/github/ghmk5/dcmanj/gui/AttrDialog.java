@@ -367,6 +367,7 @@ public class AttrDialog extends JDialog {
 
   }
 
+  @SuppressWarnings("unused")
   private void clearFields() {
     typeComboBox.setSelectedIndex(0);
     adultNullRB.setSelected(true);

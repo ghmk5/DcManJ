@@ -276,6 +276,8 @@ public class Util {
       bean = decoder.readObject();
       decoder.close();
     } catch (FileNotFoundException e) {
+      JOptionPane.showConfirmDialog(null, "指定された初期設定ファイルの読み込みに失敗しました", "Beanファイル読み込みエラー",
+          JOptionPane.ERROR_MESSAGE);
       e.printStackTrace();
     }
 
@@ -300,6 +302,8 @@ public class Util {
       encoder.writeObject(bean);
       encoder.close();
     } catch (FileNotFoundException e) {
+      JOptionPane.showConfirmDialog(null, "指定された初期設定ファイルの書き込みに失敗しました", "Beanファイル書き込みエラー",
+          JOptionPane.ERROR_MESSAGE);
       e.printStackTrace();
     }
   }

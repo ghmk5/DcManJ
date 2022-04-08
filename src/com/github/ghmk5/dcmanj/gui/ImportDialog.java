@@ -57,6 +57,7 @@ public class ImportDialog extends JDialog {
       "備考", "元ネタ", "頁数", "容量", "パス", "日付", "発刊", "保存ファイル名"};
   // TableModelには入っているが表示しない列 -- 直接インデックスで指定すると、表示しない列の二つ目以降で番号がずれて分かりにくくなる
   String[] columnsToHide = {"ID", "成", "頁数", "容量", "パス", "日付", "発刊"};
+  @SuppressWarnings("rawtypes")
   private Class[] classesInRow =
       {String.class, Integer.class, String.class, Boolean.class, String.class, String.class,
           String.class, String.class, String.class, String.class, String.class, String.class,
@@ -317,6 +318,7 @@ public class ImportDialog extends JDialog {
     model = new DefaultTableModel(data, tableHeaders) {
 
       // 各列が持つデータのクラスを指定
+      @SuppressWarnings({"unchecked", "rawtypes"})
       @Override
       public Class getColumnClass(int columnIndex) {
         switch (classesInRow[columnIndex].getSimpleName()) {

@@ -72,6 +72,7 @@ public class PredicateBox extends Box {
       this.owner = owner;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void actionPerformed(ActionEvent e) {
       StringBuilder statementBuilder = new StringBuilder("SELECT ROWID, * FROM magdb WHERE ");

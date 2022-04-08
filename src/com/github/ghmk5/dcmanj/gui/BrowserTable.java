@@ -49,6 +49,7 @@ public class BrowserTable extends ExtendedTable {
       {"rowid", "type", "adult", "circle", "author", "title", "subtitle", "volume", "issue",
           "displayedTitle", "note", "pages", "size", "path", "date", "original", "release"};
   HashMap<String, String> dbColumnNameMap;
+  @SuppressWarnings("rawtypes")
   private Class[] classesInRow =
       {Integer.class, String.class, Boolean.class, String.class, String.class, String.class,
           String.class, String.class, String.class, String.class, String.class, Integer.class,
@@ -109,6 +110,7 @@ public class BrowserTable extends ExtendedTable {
     model = new DefaultTableModel(tableHeaders, 0) {
 
       // 各列が持つデータのクラスを指定
+      @SuppressWarnings({"unchecked", "rawtypes"})
       @Override
       public Class getColumnClass(int columnIndex) {
         switch (classesInRow[columnIndex].getSimpleName()) {
@@ -189,7 +191,7 @@ public class BrowserTable extends ExtendedTable {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-          System.out.println(main.appInfo.getAoViewerPath());
+          // System.out.println(main.appInfo.getAoViewerPath());
           Util.openWithViewer(main.appInfo, getEntries().get(0), true);
         }
       };

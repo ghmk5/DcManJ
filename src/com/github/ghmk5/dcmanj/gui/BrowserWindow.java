@@ -305,6 +305,7 @@ public class BrowserWindow extends JFrame {
 
   }
 
+  @SuppressWarnings("unused")
   private static class mntmPackListner implements ActionListener {
     BrowserWindow browserWindow;
 

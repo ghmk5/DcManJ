@@ -55,6 +55,7 @@ public class ExtendedTable extends JTable {
     super(dm);
   }
 
+  @SuppressWarnings("rawtypes")
   public ExtendedTable(Vector<? extends Vector> rowData, Vector<?> columnNames) {
     super(rowData, columnNames);
   }
