@@ -2,13 +2,17 @@ package com.github.ghmk5.dcmanj.util;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Point2D;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
@@ -326,8 +330,6 @@ public class Util {
    */
   public static void setRect(Window window, Rectangle givenRect) {
     window.pack();
-    Rectangle desktopBounds =
-        GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
     Rectangle currentRect = window.getBounds();
 
     if (givenRect.isEmpty()) {
@@ -349,15 +351,10 @@ public class Util {
       rectToSet.height = currentRect.height;
     }
 
-    // ウィンドウが一部でも画面に入っている場合のみ指定位置に移動させる
-    // 完全に画面の外に出てしまっている場合はデフォルト位置に戻す
-    if (desktopBounds.intersects(givenRect)) {
-      rectToSet.setLocation(givenRect.getLocation());
-    } else {
-      rectToSet.setLocation(10, 10);
-    }
-
+    rectToSet.x = givenRect.x;
+    rectToSet.y = givenRect.y;
     window.setBounds(rectToSet);
+    tweakLocation(window);
   }
 
   /**
@@ -782,4 +779,47 @@ public class Util {
     return newSaveDir;
   }
 
+  /**
+   * Component cが画面外にある場合、直近のディスプレイの左上隅に移動させる
+   *
+   * @param c 操作対象のComponent(通常Window)
+   * @param threshold cとディスプレイの交差領域サイズが (40d x 40d)
+   *        に満たないとき、cは画面外にあると判定される。サイズは第2引数としてdoubleを与えることで指定可能
+   */
+  public static void tweakLocation(Component c) {
+    tweakLocation(c, 40d);
+  }
+
+  /**
+   * Component cが画面外にある場合、直近のディスプレイの左上隅に移動させる
+   *
+   * @param c 操作対象のComponent(通常Window)
+   * @param threshold cとディスプレイの交差領域サイズが (threshold x threshold) に満たないとき、cは画面外にあると判定される
+   */
+  public static void tweakLocation(Component c, double threshold) {
+    boolean isDisplayed = false;
+    Rectangle componentRectangle = c.getBounds();
+    Rectangle displayRectangle;
+    Rectangle interSection;
+    double distance;
+    HashMap<Double, Point2D> pointMap = new HashMap<>();
+    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    for (GraphicsDevice gd : ge.getScreenDevices()) {
+      for (GraphicsConfiguration gc : gd.getConfigurations()) {
+        displayRectangle = gc.getBounds();
+        interSection = componentRectangle.intersection(displayRectangle);
+        distance = displayRectangle.getLocation().distance(componentRectangle.getLocation());
+        pointMap.put(distance, displayRectangle.getLocation());
+        if (interSection.getWidth() >= threshold && interSection.getHeight() >= threshold) {
+          isDisplayed = true;
+        }
+      }
+    }
+    if (!isDisplayed) {
+      ArrayList<Double> distanceList = new ArrayList<Double>(pointMap.keySet());
+      Collections.sort(distanceList);
+      distance = distanceList.get(0);
+      c.setLocation((Point) pointMap.get(distance));
+    }
+  }
 }
